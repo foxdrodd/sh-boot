@@ -1,3 +1,10 @@
+2005-01-20  Hiroshi DOYU  <Hiroshi_DOYU@montavista.co.jp>
+
+	SolutionEngine SHMobile3 SH73180 support.
+	* config/config.{h,mk}-seshm3-eth, init-seshm3.S: New files
+	* Makefile: Added entry for shm3
+	* sh-stub.c: Modified number of cache ways for shm3
+
 2005-01-17  Hiroshi DOYU  <Hiroshi_DOYU@montavista.co.jp>
 
 	* Makefile: Removed residual "-pipe" in CFLAGS. 
@@ -7,7 +14,7 @@
 
 2005-01-14  Hiroshi DOYU  <Hiroshi_DOYU@montavista.co.jp>
 
-	SolutionEngine SHMobile SH7300 support.
+	SolutionEngine SHMobileV SH7300 support.
 	* string.c: "strcpy()" added
 	* Makefile,entry.S,sh-sci.c: Modified for SH7300
 	* main.c: Moved rtc functions into "rtc.c"

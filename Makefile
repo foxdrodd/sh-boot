@@ -187,6 +187,17 @@ sh-stub-ram.srec: sh-stub.srec
 		--change-section-lma=.sec1=0xac000000
 endif
 endif
+ifdef CONFIG_SESHM3
+MACHINE_DEPENDS := init-seshm3.o
+#
+ifdef CONFIG_ETHERNET
+MACHINE_DEPENDS += smc9000.o
+endif
+ADJUST_VMA=-0xb8000000
+sh-stub.srec: sh-stub.exe
+	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
+		-O srec sh-stub.exe sh-stub.srec --adjust-vma=${ADJUST_VMA}
+endif
 ifdef CONFIG_APSH4
 MACHINE_DEPENDS :=	init-apsh4.o
 # 0x00010000(address for ROM image)-0xa0010000(final destination) = 0x60000000

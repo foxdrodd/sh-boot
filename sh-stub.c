@@ -605,6 +605,8 @@ do {							\
 #define CACHE_OC_ENTRY_SHIFT      5
 #ifdef CONFIG_CPU_SUBTYPE_SH_R
 #define CACHE_OC_NUM_WAYS	  2
+#elif defined(CONFIG_CPU_SUBTYPE_SH73180)
+#define CACHE_OC_NUM_WAYS	  4
 #else
 #define CACHE_OC_NUM_WAYS	  1
 #endif

@@ -1,0 +1,11 @@
+#include "config/config.h-sesh4"
+#define CONFIG_CPU_SUBTYPE_SH73180      1
+#define CONFIG_SESHM3		        1
+#define CONFIG_PCLK_FREQ                27000000
+#define CONFIG_BPS                      38400
+#define CONFIG_SCIF_TTY0	        1
+#undef  CONFIG_MEMORY_SIZE
+#define CONFIG_MEMORY_SIZE              0x02000000
+#undef  CONFIG_ROM_START
+#define CONFIG_ROM_START	        0xb8000000
+#define CONFIG_ETHERNET                 1

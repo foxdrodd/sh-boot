@@ -1,3 +1,13 @@
+2004-12-22  Hiroshi DOYU  <doyu@kk.iij4u.or.jp>
+
+	* config.{h.mk}-sesh4-7751r-eth: Added for network boot on SolutionEngine SH7751R
+	
+	* config.h-sesh4-7751-eth: Support of a large kernel image loaded on 
+	SolutionEngine SH7751R
+	
+	* \*.[ch]: "CONFIG_CPU_SH[3,4]" used instead of "__sh3__"/"__SH4__" 
+	because of GCC.
+	
 2003-08-31  YOSHII Takashi <takasi-y@ops.dti.ne.jp>
 	* sh-sci.c(init_serial): Bug fix. SCPCR mask 0x0cff (was 0x0fcf).
 

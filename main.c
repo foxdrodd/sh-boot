@@ -1,4 +1,4 @@
-/* $Id: main.c,v 1.45 2001/09/18 06:57:49 gniibe Exp $
+/* $Id: main.c,v 1.2 2003/12/12 15:34:43 lethal Exp $
  *
  * sh-ipl+g/main.c
  *
@@ -552,10 +552,10 @@ shutdown (unsigned int func)
   return 0;
 }
 
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 #define MMUCR		0xFFFFFFE0	/* MMU Control Register */
 #define MMU_CONTROL_INIT_DISABLE	0x006	/* SV=0, TF=1, IX=1, AT=0 */
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 #define MMUCR		0xFF000010	/* MMU Control Register */
 #define MMU_CONTROL_INIT_DISABLE	0x204	/* SQMD=1, SV=0, TI=1, AT=0 */
 #endif
@@ -566,9 +566,9 @@ disable_MMU (void)
   p4_outl (MMUCR, MMU_CONTROL_INIT_DISABLE);
 }
 
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 #define TMU_TSTR	0xfffffe92	/* Byte access */
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 #define TMU_TSTR	0xffd80004	/* Byte access */
 #endif
 
@@ -581,7 +581,7 @@ reset_interrupt_request_sources (void)
   /* ... and others */
 }
 
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 #define R64CNT  	0xfffffec0
 #define RSECCNT 	0xfffffec2
 #define RMINCNT 	0xfffffec4
@@ -589,7 +589,7 @@ reset_interrupt_request_sources (void)
 #define RCR1    	0xfffffedc
 
 #define RTC_BIT_CHANGE 0x00 /* No bug */
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 #define R64CNT  	0xffc80000
 #define RSECCNT 	0xffc80004
 #define RMINCNT 	0xffc80008

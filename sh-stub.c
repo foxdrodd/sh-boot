@@ -568,7 +568,7 @@ do {							\
 		: "=&r" (__dummy));			\
 } while (0)
 
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 #define CCR		 0xffffffec
 #define CCR_CACHE_INIT	 0x0000000d	/* 8k-byte cache, CF, P1-wb, enable */
 #define CCR_CACHE_STOP	 0x00000008
@@ -584,7 +584,7 @@ do {							\
 #define CACHE_OC_ENTRY_SHIFT    4
 #define CACHE_OC_NUM_WAYS	4
 
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 #define CCR		 0xff00001c
 #ifdef CONFIG_CPU_SUBTYPE_SH_R
 #define CCR_CACHE_INIT	 0x8000090d	/* EMODE,ICI,ICE(16k),OCI,P1-wb,OCE(32k) */
@@ -1000,9 +1000,9 @@ gdb_handle_exception (int exceptionVector, int trapa_value)
     }
 }
 
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 #define TRA 0xffffffd0
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 #define TRA 0xff000020
 #endif
 

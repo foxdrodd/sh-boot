@@ -1,4 +1,5 @@
 #define CONFIG_LITTLE_ENDIAN	1
+#define CONFIG_CPU_SH3          1
 #define CONFIG_SESH3		1
 #define CONFIG_SCIF		1
 #define CONFIG_SOLUTION_ENGINE  1

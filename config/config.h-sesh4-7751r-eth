@@ -1,0 +1,3 @@
+#include "config/config.h-sesh4-7751-eth"
+
+#define CONFIG_CPU_SUBTYPE_SH_R 1

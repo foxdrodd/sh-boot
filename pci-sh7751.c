@@ -62,10 +62,11 @@
 
 #define SH7751_PCI_MEM_BASE 0xFD000000
 #define SH7751_PCI_MEM_SIZE 0x01000000
-#if defined(CONFIG_CPU_SUBTYPE_SH_R)
-/* on SE7751R, SH7751_PCI_IO_BASE must be 0 otherwise Ether-chip doesn't work
- * on SE7751, I don't know.
- */
+#if 0 /* defined(CONFIG_CPU_SUBTYPE_SH_R) */
+/* XXXX MAY I REMOVE THIS? XXXXXX */
+    /* on SE7751R, SH7751_PCI_IO_BASE must be 0 otherwise Ether-chip doesn't work
+     * on SE7751, I don't know.
+     */
 #define SH7751_PCI_IO_BASE  0
 #else
 #define SH7751_PCI_IO_BASE  0xFE240000

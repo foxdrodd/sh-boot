@@ -20,14 +20,14 @@
 
 #if defined(CONFIG_SCI)
 #define SCSCR_INIT 	0x0030 /* TIE=0,RIE=0,TE=1,RE=1 */
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 #define SCSMR  (volatile unsigned char *)0xfffffe80
 #define SCBRR  0xfffffe82
 #define SCSCR  (volatile unsigned char *)0xfffffe84
 #define SC_TDR  0xfffffe86
 #define SC_SR  (volatile unsigned char *)0xfffffe88
 #define SC_RDR  0xfffffe8a
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 #define SCSMR	(volatile unsigned char *)0xffe00000
 #define SCBRR	0xffe00004
 #define SCSCR	(volatile unsigned char *)0xffe00008
@@ -37,7 +37,7 @@
 #endif
 #elif defined(CONFIG_SCIF)
 #define SCSCR_INIT 	0x0038 /* TIE=0,RIE=0,REIE=1,TE=1,RE=1 */
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 #define SCSMR  (volatile unsigned char *)0xA4000150
 #define SCBRR  0xA4000152
 #define SCSCR  (volatile unsigned char *)0xA4000154
@@ -51,7 +51,7 @@
 #define SCPCR  0xA4000116
 #define SCPDR  0xA4000136
 
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 #ifdef CONFIG_SCIF_TTY0
 #define SCIF_BASE 0xFFE00000
 #else
@@ -71,10 +71,10 @@
 
 #define SCLSR  (SCIF_BASE + 0x24)
 
-#endif /* __SH4__ */
+#endif /* CONFIG_CPU_SH4 */
 #endif /* CONFIG_SCIF */
 
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 
 #define RFCR    0xffffff74
 #if defined(CONFIG_SESH3)
@@ -91,7 +91,7 @@
 #define BPS_SETTING_VALUE	3 /* 3: 115200 bps */
 #endif
 
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 
 #define RFCR    0xFF800028
 #if defined(CONFIG_APSH4)
@@ -99,7 +99,7 @@
 #elif defined(CONFIG_DREAMCAST)
 #define BPS_SETTING_VALUE	13 /* 13: 115200 bps */
 #elif defined(CONFIG_SESH4) && defined(CONFIG_CPU_SUBTYPE_SH_R)
-#define BPS_SETTING_VALUE	15
+#define BPS_SETTING_VALUE	47
                                   /* Using a 20.000 MHz clock */
                                   /* 15: 115200 bps (1.7% off) */
                                   /* 31:  57600 bps (1.7% off) */
@@ -159,7 +159,7 @@ handleError (void)
 {
   p4_in(SC_SR);
   p4_out(SC_SR, SCI_ERROR_CLEAR);
-#if defined(CONFIG_SCIF) && defined(__SH4__)
+#if defined(CONFIG_SCIF) && defined(CONFIG_CPU_SH4)
   p4_inw(SCLSR);
   p4_outw(SCLSR, SCIF_ORERR_CLEAR);
 #endif
@@ -181,7 +181,7 @@ init_serial(void)
   sleep128(1);			/* wait at least 1bit-time */
 
 #if defined(CONFIG_SCIF)
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
   { /* For SH7709, SH7709A, SH7729 */
     unsigned short data;
     /* We need to set SCPCR to enable RTS/CTS */
@@ -194,7 +194,7 @@ init_serial(void)
     /* Set /RTS2 (bit6) = 0 */
     p4_outb(SCPDR, data&0xbf);
   }
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
   p4_outw(SCSPTR, 0x0080); /* Set RTS = 1 */
 #endif
   p4_out(SCFCR, 0x0000);	/* RTRG=00, TTRG=00 */
@@ -212,7 +212,7 @@ getDebugCharReady (void)
   status = p4_in(SC_SR);
   if (status & ( SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
     handleError ();
-#if defined(CONFIG_SCIF) && defined(__SH4__)
+#if defined(CONFIG_SCIF) && defined(CONFIG_CPU_SH4)
   if (p4_inw(SCLSR) & SCIF_ORER)
     handleError ();
 #endif
@@ -252,7 +252,7 @@ getDebugCharTimeout (int count)
 
   if (status & (SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
     handleError ();
-#if defined(CONFIG_SCIF) && defined(__SH4__)
+#if defined(CONFIG_SCIF) && defined(CONFIG_CPU_SH4)
   if (p4_inw(SCLSR) & SCIF_ORER)
     handleError ();
 #endif
@@ -275,7 +275,7 @@ getDebugChar (void)
 
   if (status & (SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
     handleError ();
-#if defined(CONFIG_SCIF) && defined(__SH4__)
+#if defined(CONFIG_SCIF) && defined(CONFIG_CPU_SH4)
   if (p4_inw(SCLSR) & SCIF_ORER)
     handleError ();
 #endif

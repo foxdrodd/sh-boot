@@ -15,7 +15,7 @@
 #include "config.h"
 #include "linkage.h"
 
-#if defined(__sh3__)
+#if defined(CONFIG_CPU_SH3)
 TRA      = 0xffffffd0
 EXPEVT   = 0xffffffd4
 INTEVT   = 0xffffffd8
@@ -23,7 +23,7 @@ TMU0_TCR = 0xfffffe9c
 #define CCR			0xffffffec	/* Cache Control Register */
 #define CCR_CACHE_DISABLE	0x008		/* Flush the cache, disable */
 #define CCR_CACHE_INIT		0x0		/* disable */
-#elif defined(__SH4__)
+#elif defined(CONFIG_CPU_SH4)
 TRA      = 0xff000020
 EXPEVT   = 0xff000024
 INTEVT   = 0xff000028

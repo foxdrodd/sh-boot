@@ -17,26 +17,26 @@ NM	=$(CROSS_COMPILE)nm
 
 CFLAGS = -O2 -g -Wall
 
+# derived from $(TOPDIR)/Makefile
+cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
+             > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
+
+cflags-y				:= -mb
+cflags-$(CONFIG_LITTLE_ENDIAN)	        := -ml
+
+cflags-$(CONFIG_CPU_SH3)		+= -m3
+cflags-$(CONFIG_CPU_SH4)		+= -m4 \
+	$(call cc-option,-mno-implicit-fp,-m4-nofpu)
+
+CFLAGS		+= -pipe $(cflags-y)
+AFLAGS		+= $(cflags-y)
+
 ifdef CONFIG_LITTLE_ENDIAN
-CFLAGS		+= -ml
-AFLAGS		+= -ml
 LDFLAGS		:= -EL
 else
-CFLAGS		+= -mb
-AFLAGS		+= -mb
 LDFLAGS		:= -EB
 endif
 
-ifdef CONFIG_CPU_SH3
-CFLAGS		+= -m3
-AFLAGS		+= -m3
-endif
-ifdef CONFIG_CPU_SH4
-CFLAGS		+= -m4 -mno-implicit-fp
-AFLAGS		+= -m4 -mno-implicit-fp
-endif
-
-CFLAGS		+= -pipe
 LINKSCRIPT       = sh-stub.lds
 LINKFLAGS	+= -T $(word 1,$(LINKSCRIPT)) -e start $(LDFLAGS)
 LIBGCC           = $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)

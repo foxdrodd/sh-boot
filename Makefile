@@ -15,7 +15,7 @@ LD	=$(CROSS_COMPILE)ld
 OBJCOPY =$(CROSS_COMPILE)objcopy
 NM	=$(CROSS_COMPILE)nm
 
-CFLAGS = -Os -pipe -Wall -fno-hosted -fomit-frame-pointer
+CFLAGS = -Os -Wall -fno-hosted -fomit-frame-pointer
 
 # derived from $(TOPDIR)/Makefile
 cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
@@ -36,6 +36,9 @@ LDFLAGS		:= -EL
 else
 LDFLAGS		:= -EB
 endif
+
+export CROSS_COMPILE CC LD OBJCOPY NM CFLAGS AFLAGS LDFLAGS
+
 
 LINKSCRIPT       = sh-stub.lds
 LINKFLAGS	+= -T $(word 1,$(LINKSCRIPT)) -e start $(LDFLAGS)
@@ -262,7 +265,7 @@ ethboot/etherboot.o: ethboot/ethboot.c ethboot/bootp.c ethboot/nfs.c ethboot/net
 clean:
 	rm -rf sh-stub.exe sh-stub.bin sh-stub.elf *.o sh-stub.lds \
 	       sh-stub.hex sh-stub{,-ram}.srec sh-stub.map ${OTHER_FILES}
-	rm -f ethboot.lnk
+	rm -f ethboot.lnk *~
 	make -C ethboot clean
 
 cs89x0.o:     config.h string.h defs.h cs89x0.h io.h

@@ -1,0 +1,14 @@
+CROSS_COMPILE= sh-linux-gnu-
+
+CC	=$(CROSS_COMPILE)gcc -I.
+LD	=$(CROSS_COMPILE)ld
+OBJCOPY=$(CROSS_COMPILE)objcopy
+
+flash:	flash.o
+	$(LD) -T shl.x -EL -e do_flash flash.o -o flash
+
+flash.o: flash.c
+	$(CC) -O2 -g -USWAP -m4-nofpu -pipe   -c flash.c -o flash.o
+
+clean:
+	rm -f *.o flash

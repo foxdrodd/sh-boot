@@ -1,4 +1,4 @@
-/* $Id: init-cqsh3.S,v 1.9 2000-05-06 17:02:18+09 gniibe Exp $
+/* $Id: init-cqsh3.S,v 1.11 2001/02/14 05:57:29 gniibe Exp $
  *  Taken from the manual of CQ RISC Evaluatin Kit for SH-3
  *  Copyright (C) 1998 CQ Publishing.
  *
@@ -63,10 +63,92 @@ ENTRY(init_bsc)
 	cmp/hi	r3,r2
 	bf	1b
 
-#if defined(CONFIG_COMPACT_FLASH)
-	/* Reset Compact flash */
+	/* Configure & Reset Compact flash */
+#ifdef CONFIG_DIRECT_COMPACT_FLASH
+# ifdef CONFIG_ETHERNET
+	mov.l	ETHER_CIS_A,r1
+	!
+	mov.w	@r1+,r0
+	extu.b	r0,r0
+	mov.w	@r1+,r2
+	extu.b	r2,r2
+	swap.b  r2,r2
+	or	r2,r0
+	mov.w	@r1+,r2
+	extu.b	r2,r2
+	swap.w  r2,r2
+	or	r2,r0
+	mov.w	@r1+,r2
+	extu.b	r2,r2
+	swap.b  r2,r2
+	swap.w  r2,r2
+	or	r2,r0
+	!
+	mov.l	ETHER_CIS_ID,r1	
+	cmp/eq	r0,r1
+	bf	1f
+	!
+	mov.l	ETHER_COR_A,r1
+	mov.w	ETHER_COR_D1,r0
+	mov.w	r0,@r1
+	nop
+	nop
+	nop
+	mov.l	ETHER_COR_A,r1
+	mov.w	ETHER_COR_D2,r0
+	mov.w	r0,@r1
+	nop
+	!
+	mov.l	NE_RESET,r1
+	mov.b	@r1,r0
+	mov.b	r0,@r1
+	!
+	mov.l	D8390_P0_ISR,r1
+3:
+	mov.b	@r1,r0
+	tst	#0x80,r0
+	bt	3b
+	!
+	mov	#0xff,r0
+	mov.b	r0,@r1
+	!
+4:	mov.l	0f,r5
+	mov.l	0f,r6
+	mov.l	0f,r7
+	bra	3f
+	 nop
+	.align	2
+0:	.long 0xbabeface
+1:
+# endif
+# ifdef CONFIG_IDE
+	mov.l	CF_CIS_A,r1
+	!
+	mov.w	@r1+,r0
+	extu.b	r0,r0
+	mov.w	@r1+,r2
+	extu.b	r2,r2
+	swap.b  r2,r2
+	or	r2,r0
+	!
+	mov.l	CF_CIS_ID,r1	
+	cmp/eq	r0,r1
+	bf	3f
+	!
+	mov.l	CF_COR_A,r1
+	mov.w	CF_COR_D1,r0
+	mov.w	r0,@r1
+	nop
+	nop
+	nop
+	mov.l	CF_COR_A,r1
+	mov.w	CF_COR_D2,r0
+	mov.w	r0,@r1
+	bra	4b
+	nop
+# endif
+3:
 #endif
-
 	rts
 	 nop
 
@@ -91,6 +173,37 @@ RTCOR_A:
 	.long	0xffffff72	/* RTCOR Address */
 RFCR_A:
 	.long	0xffffff74	/* RFCR Address */
+#ifdef CONFIG_DIRECT_COMPACT_FLASH
+# ifdef CONFIG_ETHERNET
+ETHER_CIS_A:	.long	(CONFIG_CIS_BASE+0x001c)
+ETHER_CIS_ID:
+	.long	0xc1ab0149	/* manfid 0x0149, 0xc1ab */
+NE_RESET:
+	.long	(CONFIG_IO_BASE+0x0300+0x001f)
+D8390_P0_ISR:
+	.long	(CONFIG_IO_BASE+0x0300+0x0007)
+	!
+/* Setup CIS/COR: This is only valid for: Planex Communications Inc. */
+/* Use dump_cid(8) to get information of your card */
+ETHER_COR_A:
+	.long	(CONFIG_CIS_BASE+0x3f8)
+ETHER_COR_D1:
+	.word	0x00E0  /* Reset, configuration: 0x20, Level interrupt: 0x40 */
+ETHER_COR_D2:
+	.word	0x0060  /* Select configuration: 0x20, Level interrupt: 0x40 */
+# endif
+# ifdef CONFIG_IDE
+CF_CIS_A:	.long	(CONFIG_CIS_BASE+0x0074)
+CF_CIS_ID:
+	.long	0x00000101	/* disk_interface [ide] */
+CF_COR_A:
+	.long	(CONFIG_CIS_BASE+0x200)
+CF_COR_D1:
+	.word	0x00C2  /* Reset, configuration: 0x02, Level interrupt: 0x40 */
+CF_COR_D2:
+	.word	0x0042  /* Select configuration: 0x20, Level interrupt: 0x40 */
+# endif
+#endif
 BCR1_D:
 	.word	0x0013	/* CS3 = DRAM, CS5/6=PCMCIA  */
 BCR2_D:
@@ -100,7 +213,7 @@ WCR1_D:
 WCR2_D:
 	.word	0xfe47	/* wait: CS0=10, CS1/2=0, CS3=2, CS4=4, CS5/6=10 */
 PCR_D:
-	.word	0x0000
+	.word	0x0050
 RTCSR_D:
 	.word	0xa510		/* RTCSR 16mS */
 RTCOR_D:

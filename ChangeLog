@@ -1,14 +1,526 @@
-2000-06-21  Greg Banks  <gnb@alphalink.com.au>
+2001-06-06  SUGIOKA Toshinobu <sugioka@itonet.co.jp>
 
-	* sh-stub.c (ebin2mem): New function.
-	(gdb_handle_exception): Implement binary transfer.
+	* init-sh2000.S, sh2000.c, config/config.h-sh2000,
+	config/config.mk-sh2000, machine/sh2000.mem: New file.
+	* sh-sci.c (BPS_SETTING_VALUE): Added CONFIG_SH2000.
+	* Makefile: Likewise
+	* main.c: Added inclusion of io.h.
+	(start_main): Added CONFIG_SH2000. Added checking if
+	ide_detect_devices () is successfull.
+	* ide.c (IDE_DSC): Defined. (ide_device_selection): Change status
+	handling. (ide_getdata): Likewise.
+
+2001-06-04  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (start_main): Added more sti(s).
+
+2001-06-04  Jeremy Siegel <jsiegel@mvista.com>
+
+	* ns8390.c: Support big-endian.
+
+	* Makefile (sh-stub-ram.srec): Added.
+
+	* config/config.h-sesh4-7751-eth.big,
+	config/config.h-sesh4-7751.big,
+	config/config.mk-sesh4-7751-eth.big,
+	config/config.mk-sesh4-7751.big, config/config.h-sesh3-eth.big,
+	config/config.mk-sesh3-eth.big: New config files.
+
+	* entry.S (saveRegisters): Removed bogus assignment to r2.
+	(it was for SH-2).
+	(break): Use "4" as label to avoid confusion.
+
+	* string.h (memset), string.c (memset): New function.
+
+	* sh-stub.c (leds): Added case for SH7751.
+	(handle_exception): Handle NMI.
+
+	* sh-sci.c (BPS_SETTING_VALUE): Added for SS7751.
+
+	* main.c (start_main): Added initialization of PCIC for SS7751.
+	* pcnet32.c, pci-sh7751.c: New files from Linux.
+
+	* io.h (swab32, swab16, le16_to_cpu, le32_to_cpu, be16_to_cpu,
+	be32_to_cpu): New macros and functions.
+
+	* init-sesh4.S: Added values for CONFIG_CPU_SUBTYPE_SH7751.
+	(BCR2_D_VALUE, WCR1_D_VALUE, WCR2_D_VALUE, LED_ADDRESS,
+	RTCOR_D_VALUE, SDMR3_ADDRESS, MCR-D1_VALUE, MCR_D2_VALUE,
+	SWITCH_ADDR): New macros.
+
+	* entry.S (do_pciIRQ): New label.
+	(exception_handling_table): Added entries for
+	CONFIG_CPU_SUBTYPE_SH7751.
+
+	* defs.h (init_pcic, pci_read_config_dword,
+	pci_write_config_dword, pci_nextio, pci_nextmem): Added
+	declarations.
+
+	* Makefile (NM): Added.
+	(sh-stub.map): Added a rule to generate.
+
+2001-06-01  Yutarou Ebihara <ebiharaml@si-linux.com>
+
+	* main.c (start_main): Added sti(s).
+
+	* init-cat68701.S: Fill the enabler at CONFIG_DIRECT_COMPACT_FLASH
+	&& CONFIG_IDE.
+
+	* config/config.h-cat68701 (CONFIG_CIS_BASE): Added.
+
+2001-05-25  Stuart Menefy <stuart.menefy@st.com>
+
+	Added support for STMicroelectronics SH7750 and ST40STB1
+	Overdrive platforms:
+	
+	* Makefile sh-stub.lds.S: Specify .mem file in Makefile
+	rather than sh-stub.lds.S, allows make to check dependency
+	* defs.h main.c: Added printouthex32 (useful for debugging)
+	* sh-sci.c: Allow second SCIF to be used
+	
+	* config/config.h-od{7750,stb1} config/config.mk-od{7750,stb1}
+	init-od{7750,stb1}.S machine/od{7750,stb1}.mem: New files
+
+2001-05-09  Yutarou Ebihara <ebiharaml@si-linux.com>
+
+	* ide.c (wait_ready): New function.
+	(ide_reset): Delay more. (was: only call delay10000 once).
+	(ide_identify_device, ide_set_transfer_mode,
+	ide_set_device_params, ide_idle ide_read_sectors): Call
+	wait_ready.
+
+	* entry.S (start): Keep interrupt-off.
+	(INITIAL_SR): Set 0x50000000. (was: 0x40000000).
+
+2001-02-18  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (get_tick_1): Work around for the bug of SH-4's RTC.
+	(sleep128): Ditto.
+	(RTC_BIT_CHANGE): New define.
+	(last_tick, rtc_error): New variables.
+	(get_tick_1): More work around.  CF doesn't work on SH-4.
+
+2001-02-17  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (start_main): Do start again.
+	(get_tick): Avoid RTC problem on SH7750S.  Return 0 when
+	RTC clock goes back.
+
+	* ns8390.c (eth_pio_write): Added acknowledge.
+	Detect timeout.
+	Return -1 on error.
+
+2001-02-14  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* config/config.h-cqsh4-eth, config/config.mk-cqsh4-eth,
+	precompiled/sh-stub-cqsh4-eth.srec: New files for CqREEK SH-4
+	with NE2000.
+
+	* ne: New file (was: ne-cfdirect.h).
+	* ne-cfdirect.h: Removed.
+
+	* ns8390.c: Include ne.h when CONFIG_NE2000 is defined.
+
+	* config/config.h-cqsh3-eth (CONFIG_NE2000): Defined.
+
+	* machine/cqsh4.mem: Limit 16KB (was 1024k), as loader will be
+	placed at 0x4000.
+
+	* machine/test4.mem: Allow bigger text (was 12KB).
+	Moved to P1 (was P2).
+
+	* ide.c (init_ide): Remove the initialization of the bus bridge. 
+	* init-cqsh4.S (CONFIG_CQ_BRIDGE): Moved here.
+
+	* machine/cqsh4.mem: Use P1 (instead of P2).
+
+	* machine/test.mem: Allow bigger text (was 12KB).
+
+	* machine/cqsh3.mem: Limit ROM with 16KB (as loader will be placed
+	upper half).  Use P1 (instead of P2).
+
+	* config/config.h-sesh4-eth (CONFIG_STNIC): Added.
+	* config/config.h-sesh3-eth (CONFIG_STNIC): Added.
+
+	* ide.c (ide_detect_devices): Return integer (was: void).
+	(init_ide): Don't initialize compact flash here (done at
+	init-XXX.S).
+
+	* defs.h (ide_detect_devices): Ditto.
+
+	* Makefile: stnic.c --> ns8390.c.
+
+	* main.c (banner, help_message): Version 0.9.
+
+	Support CqREEK SH-3 with Compact Flash Ethernet Adapter "CF-10T".
+	* ns8390.c: New file (renamed from stnic.c).
+	* stnic-se.h, ne-cfdirect.h: New files.
+	* config/config.h-cqsh3-eth, config/config.mk-cqsh3-eth: New files.
+	* precompiled/sh-stub-cqsh3-eth.hex: New file.
+	* stnic.c: Removed.
+
+	* init-cqsh3.S: Add initialization for CONFIG_ETHERNET.
+
+2001-02-08  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* ide.c (init_ide): Removed setting CF_CIS_BASE+0x0200.
+	* init-cqsh3.S: Initialize Compact Flush.
+
+2001-01-31  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (get_tick_1): Bug fixed.
+
+	* init-sesh4.S (FRQCR_D): When CONFIG_OLD_SESH4 is defined for
+	old buggy SESH4, set it 6:1:1.
+
+2001-01-23  Yutarou Ebihara <ebiharaml@si-linux.com>
+
+	* cat68701.c, config/config.h-cat68701, config/config.mk-cat68701,
+	init-cat68701.S, machine/cat68701.mem: New files.
+
+	* sh-stub.lds.S: Added CONFIG_CAT68701.
+	* sh-sci.c (BPS_SETTING_VALUE): Likewise.
+	* Makefile: Likewise.
+	* main.c (handle_bios_call, start_main): Likewise.
+
+2001-01-09  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* stnic.c (eth_node_addr): Get the address from DIP switch.
+
+	* init-sesh4.S: Remove the setting of node_address (as BSS setting
+	clear it out).
+
+	* config/config.h-sesh3-eth (CONFIG_ETHER_CONFIG_WORD): New
+	configuration.
+
+	* init-sesh3.S: Support BOOT_CONFIG_WORD.
+	* config/config.h-sesh3-eth (CONFIG_MEMORY_SIZE): 32MB (was 16MB).
+	* stnic.c (node_addr): Let it be in BSS.  Don't initialize here.
+	(node_addr_template): New Variable.
+
+2001-01-08  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* init-sesh4.S: Add setting Ethernet node_address from the data
+	specified by DIP switch.
+
+	* stnic.c (node_addr): Make it public (was static).
+
+2001-01-05  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* precompiled/sh-stub-sesh4-eth: New file.
+
+	* init-sesh4.S: Don't use two different setting for RTCSR.
+	Wait 30 times for DRAM refresh (was only 8 times).
+
+	* stnic.c (pkt): Use remcomInBuffer.
+	* defs.h (BUFMAX): Changed to 1546 (was: 1024).
+	* entry.S (exception_handling_table): Enlarge the table for SH7750.
+
+	* machine/sesh4.mem: Changed to let it run at P1 area, ROM length
+	16KB.
+	* sh-stub.c (flush_icache_range): Delete unused variables.
+	(gdb_handle_exception): We have limited length on remcomOutBuffer.
+
+2001-01-04  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (reset_interrupt_request_sources): New function.
+	(disable_MMU, set_RB, set_BL): New functions.
+	(set_boot_signature, get_boot_signature): New functions.
+	(start_main): Check boot signature for reboot.
+	(shutdown): Set boot signature.
+
+	* stnic.c (delay): Added another delay.
+
+2000-12-28  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* stnic.c: Use sleep128 for delay.
+	(eth_pio_write): Add the work-around.
+	(eth_transmit): Improved.  Only call eth_pio_write once.
+
+	* main.c (sleep128): It's 128 rather 64.
+	(get_tick_1, get_tick, reset_tick): New functions.
+
+2000-12-27  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (handle_bios_call): New BIOS call to eth_node_addr.
+	* stnic.c (eth_node_addr): New function.
+
+2000-12-26  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.c (jump_to_P2, back_to_P1): Defined for both
+	of SH-3 and SH-4.
+	* sh-stub.c (mem2hex): Add type coercion.
+	* main.c (rtc 5,6): New calls.
+
+2000-12-23  SUGIOKA Toshinobu <sugioka@itonet.co.jp>
+
+	* sh-stub.c (CCR_CACHE_ICI, jump_to_P2, back_to_P1): defined.
+	(flush_icache_range, cache_wback_all, cache_control): executable
+	in P1 on SH-4.
+	(gdb_handle_exception): flush I-cache after modify memory on SH-4.
+
+2000-12-23  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (banner, help_message): Version 0.8.
+
+	* main.c (start_main): Added '1' and '2' commands.
+	(shutdown, rtc, sleep64): New functions.
+
+	* machine/sesh3.mem: Place it at cachable area.
+
+2000-11-26  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c: Version 0.7.
+
+	* sh-stub.lds.S (CONFIG_TEST4): Added.
+	* Makefile (CONFIG_TEST4): Added.
+	* machine/test4.mem: New file.
+
+	* Makefile (AFLAGS, CFLAGS): Use -m4-nofpu (instead of -m4).
+	(sh-stub.lds): Use -traditional for CPP processing.
+	* string.h (memcpy, strcpy): Added declarations.
+	* main.c: Include "string.h"
+	* entry.S: Don't put '$' for register spec.
+
+	* init-cqsh4.S (FRQCR_D): PLL2 on (was: off).
+
+2000-10-24  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* config/config.h-sesh4-eth: New file.
+
+	* main.c (handle_bios_call): Added Ethernet functions.
+	* defs.h (eth_reset, eth_receive, eth_transmit, eth_disable): Added
+	declarations.
+
+	* stnic.c: New file.
+
+	Follow the changes of the GNU Toolchain.
+	* sh-stub.lds.S (OUTPUT_FORMAT): Change BFD name.
+
+2000-10-14  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (boot): Remove '$' for register spec.
+
+2000-09-27  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c: Version 0.6.
+
+	* sh-sci.c (init_serial): Set SCFCR after the 1-bit interval.
+	(WAIT_RFCR_COUNTER): Changed to 500 (was: 200).
+
+2000-09-17  YAEGASHI Takeshi <yaegashi@ma.kcom.ne.jp>
+
+	Add Dreamcast support.
+	* tools/dreamcast/sh-stub-boot.S: New file.
+	* tools/dreamcast/scramble.c: New file.
+	* tools/dreamcast/roast.sh: New file.
+	* tools/dreamcast/kernel-boot.S: New file.
+	* tools/dreamcast/boot.lds: New file.
+	* tools/dreamcast/README: New file.
+	* tools/dreamcast/Makefile: New file.
+	* tools/dreamcast/.gdbinit: New file.
+	* machine/dreamcast.mem: New file.
+	* config/cnfig.mk-dreamcast: New file.
+	* config/config.h-dreamcast: New file.
+	* sh-stub.lds.S: Include "machine/dreamcast.mem".
+	* sh-sci.c (BPS_SETTING_VALUE): 13 for CONFIG_DREAMCAST.
+	* Makefile: Add support for CONFIG_DREAMCAST.
+
+2000-09-09  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.c (cache_control): New function.
+	(cache_wback_all): New function.
+
+2000-09-02  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (handle_bios_call): New interface to cache_control.
+	* defs.h (cache_control): New definition.
+
+2000-08-16  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c: Version 0.5.
+
+	* init-cqsh4.S (WCR3_D): Set "holdwait time" to 0 (instead of 1,
+	for area 0,2,4,5).
+	(SDMR2): Wrote 0xAA, instead of 0x00.
+	(MCR_D1, MCR_D2): Set bit 28 for precharge time.
+
+2000-08-09  Takashi Yoshii  <yoshii-takashi@hitachi-ul.co.jp>
+
+	* main.c (start_main): Support smooth communication between GDB.
+
+	* sh-sci.c (getDebugChar, getDebugCharTimeout, getDebugCharReady,
+	handleError): Handle SCLSR for overrun error.
+	(SCLSR, SCIF_ORER, SCIF_ORERR_CLEAR): New macros.
+
+2000-08-08  Toshiharu Nozawa  <nozawat@hitachi-ul.co.jp>
+
+	SolutionEngine PCMCIA support.
+	* io.h (IDE_PORT_SHIFT): Support CONFIG_MRSHPC.
+
+	* ide.c (init_ide): Support CONFIG_MRSHPC.
+
+	* config/config.h-sesh3-pcmcia: New file.
+	* config/config.h-sesh4-pcmcia: New file.
+	* config/config.mk-sesh3-pcmcia: New file.
+	* config/config.mk-sesh4-pcmcia: New file.
+
+2000-08-05  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c: Version 0.4.
+
+	* ide.c (init_ide): Use CONFIG_IO_BASE.
+
+	* config/config.h-cqsh4: Added CONFIG_MEMORY_SIZE.
+	* config/config.h-sesh4-ide: Likewise.
+	* config/config.h-cqsh3: Likewise.
+	Added CONFIG_IO_BASE.
+
+	* main.c (handle_bios_call): Added memory size and io base
+	service.
+
+2000-08-04  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* init-cqsh4.S (WCR3_D): Change the hold time for AREA1.
+
+2000-08-02  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (handle_bios_call): Added feature query service.
+
+	* ide.c (init_ide): Change the value of interrupt level for
+	CONFIG_CQ_BRIDGE.  We need IRQ14 here.
+
+2000-07-31  NIIBE Yutaka  <gniibe@m17n.org>
+
+	CQ Bridge Support for CqREEK SH-4.
+	* config/config.mk-cqsh4 (CONFIG_IDE): Added.
+	* config/config.h-cqsh4: Added CONFIG_IDE and CONFIG_CQ_BRIDGE.
+	Added CONFIG_RAM_BOOT.
+	* ide.c (init_ide): Add initialization for CONFIG_CQ_BRIDGE.
+	* io.h (IDE_PORT_SHIFT): Add definition for CONFIG_CQ_BRIDGE.
+	* init-cqsh4.S (WCR1_D, BCR1_D): Update value for CQ Bridge
+	adapter.
+
+2000-07-25  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* io.h (CONFIG_IDE): Conditionalize.
+
+2000-07-21  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c: Version 0.3.
+
+	* config/config.h-{cqsh3,sesh3-ide,sesh4-ide,test}
+	(CONFIG_RAM_BOOT): Set P1 area.
+
+	* main.c (serial_output): LF --> CRLF.
+	(handle_bios_call): Call getDebugCharTimeout.
+
+	* sh-sci.c (getDebugCharTimeout): New Function.
+	(delayX): New function.
+
+	* defs.h: Ditto.
+
+2000-07-19  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (handle_bios_call): Added #32 serial string output.
+
+2000-07-17  Greg Banks  <gnb@alphalink.com.au>
+
+	* Makefile: Changed sh-stub to sh-stub.exe.
+
+	* entry.S: Added explanatory comments.
+
+	* sh-stub.c (doSStep): Fix bugs which incorrectly sign-extended
+	branch instruction displacements.
+	(gdb_handle_exception): Implement 'D' (detach).
+	(leds): New function.
+	(mem2hex, hex2mem, ebin2mem): Change the types of argument
+	(added const qualifier).
+
+	* main.c (handle_bios_call): Implement #31 and #254.
+	Bug fix for #255.
+
+	* main.c (serial_output): New function.
+	Fixed bug with BIOS function 0 (console output) which didn't
+	encode the output packet data properly.
+
+	* main.c (handle_bios_call): Changed BIOS function 0 to take a
+	buffer and a length, instead of a null-terminated string, to
+	work better with the kernel's printk.
+
+2000-07-13  Yutarou Ebihara <ebiharaml@si-linux.com>
+
+	* init-cqsh3.S (PCR_D): Change the value 0x0050 so that
+	directly-connected compact flash works well (was: 0x0000).
+
+	* Makefile (tools/cqsh3rom, cqsh3): Added entries to build
+	hacked image for CqREEK SH-3 EPROM.
+
+2000-07-11  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* machine/cqsh3.mem: Set the ROM size 32KB.
+	* config/{config.h-cqsh3,config.mk-cqsh3}: Updated.
+
+	* defs.h: New file.
+
+	* sh-stub.c (printouthex): New function.
+	(start-gdbstub): Removed.
+
+	* main.c: New file.
+
+	* entry.S (start): Call start_main instead of start_gdbstub.
+
+2000-07-10  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* machine/test.mem: More memory on ROM.
+
+	* sh-stub.c (start_gdbstub): Bug fix.  put "l" for license
+	command.
+
+	* config/config.mk-test (CONFIG_IDE): Added.
+	* config/config.h-test: Added CONFIG_IDE and CONFIG_RAM_BOOT.
+
+	* Makefile (MACHINE_DEPENDS): Add ide.o when CONFIG_IDE is set.
+
+	* entry.S (start): Initialize Serial Port after cleared
+	BSS section.
+	Call init_ide.
+	Include "config.h".
+
+	* io.h (ide_outw, ide_outb, ide_inw, ide_inb): New Functions.
+	(ide_offset): New Variable.
+	(delay): New Function.
+
+	* ide.c: New file.
+
+	* sh-stub.c (handle_bios_call): Call putString.
+	(handle_bios_call): Implement second storage access.
+	(boot): New Function.
+	(start_gdbstub): Implement boot command.
+
+2000-07-09  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-sci.c (putString): Put CR+LF when '\n' in string.
+
+2000-07-08  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* config/config.mk-cqsh.big: New file.
+	* config/config.h-cqsh4.big: New file.
+
+	* init-cqsh4.S: Added setting of FRQCR.  Removed register dump.
+
+	* entry.S (VBR_INIT): Set it `start'.
+	* sh-sci.c (init_serial): Set SCFCR before setting SCBRR.
+	* sh-stub.c (start_gdbstub): Implement command loop.
+
+2000-07-03  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-sci.c (putString): New Function.
 
 2000-06-21  NIIBE Yutaka  <gniibe@m17n.org>
 
 	* *.mem: Move to machine/ directory.
-	config.h-*, config.mk-*: Move tu config/ directory.
-
-	* config/, machine/: New directories.
+	config.h-*, config.mk-*: Move to config/ directory.
 
 	* Makefile: Added case of CONFIG_TEST.
 
@@ -21,6 +533,11 @@
 	(doSStep): Bug fix for BT/S and BF/S.  We don't put trapa
 	at the slot.
 	Bug fix for BRAF/BSRF, branch position is different place.
+
+2000-06-21  Greg Banks  <gnb@alphalink.com.au>
+
+	* sh-stub.c (ebin2mem): New function.
+	(gdb_handle_exception): Implement binary transfer.
 
 2000-06-19  NIIBE Yutaka  <gniibe@m17n.org>
 

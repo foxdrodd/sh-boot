@@ -1,15 +1,64 @@
-This is the GDB stub program for SuperH.  You can use this tiny
-program in the ROM of your target evaluation board.  This program may
-be distributed under GNU Lesser GPL.
+This is the SuperH IPL (Initial Program Loader) which supports GDB stub.
+
+You can use this tiny program in the ROM of your target board.  This
+program may be distributed under GNU Lesser GPL.
+
+					Niibe Yutaka  <gniibe@m17n.org>
+					Nezu Bunkyo-ku Tokyo
+					JAPAN
+					July 2000
 
 Please see the chapter "The GDB remote serial protocol" of GDB Manual.
 
-For the development environment, please look at:
+BUILDING PROGRAM:
 
-	http://www.m17n.org/linux-sh/dist/HOWTO
+For example (building for cqsh3)
 
-					Niibe Yutaka  <gniibe@m17n.org>
-					1999-10-08
+	$ ln -sf config/config.mk-sesh3 config.mk
+	$ ln -sf config/config.h-sesh3 config.h
+	$ make
+
+
+WRITING PROGRAM INTO FLASH (for Solution Engine):
+
+To write this program (sh-stub.srec) to the Flash ROM of Solution
+Engine, I use "minicom" and "ascii-xfr.  Here are the setting:
+
+------------- /etc/minirc.dfl
+# Machine-generated file - use "minicom -s" to change parameters.
+pr port             /dev/ttyUSB0
+pu baudrate         115200
+pu bits             8
+pu parity           N
+pu scriptprog       /usr/bin/runscript
+pu minit            ~^M~ATZ^M~
+pu mreset           ~^M~ATZ^M~
+------------- ~/.minirc.dfl
+# Machine-generated file - use setup menu in minicom to change parameters.
+pu pprog9           /usr/bin/ascii-xfr -dsv -l 10
+pu baudrate         115200
+pu updir            /home/niibe/work/ipl+g
+-------------
+
+Booting with Hitachi ROM monitor (SW-4-3 is "ON"), then invoke the command: 
+
+	Ready > fl 80000000
+
+Then, type "Ctrl-A S", select "ascii" transfer, and specify the
+filename to send.
+
+	Ready > fl 80000000
+	Flash ROM data copy to RAM
+	Please Send A S-format Record
+	complete
+	Program :complete
+	Flash write complete 
+	Ready >
+
+
+For the development environment and others, please look at:
+
+	http://www.m17n.org/linux-sh/
 
 Thanks to:
 	Takeshi Yaegashi
@@ -29,5 +78,8 @@ Thanks to:
 	Yutarou Ebihara
 		for cqsh3 rom image building program.
 
-	Greg Banks
-		for GDB protocol binary transfer.
+	Greg Banks & Mitch Davis
+		for bug fixes and enhancements.
+
+	Toshiharu Nozawa & Takashi Yoshii
+		for Hitach SolutionEngine Support and fixes.

@@ -1,4 +1,4 @@
-/* $Id: init-apsh4.S,v 1.1 2000-05-25 15:55:53+09 gniibe Exp $
+/* $Id: init-apsh4.S,v 1.1 2000/05/25 06:55:53 gniibe Exp $
  * Taken from CQ RISC Evaluatin Kit for SH-4 "tool/rom/start.c"
  * Copyright (C) 1999 CQ Publishing.
  *

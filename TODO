@@ -1,2 +1,29 @@
-Configure support
-Baudrate support
+Building:
+	Configure support
+
+Serial:
+	Baudrate support
+	Break handling (Force to debugger)
+
+IDE:
+	Support multiple drive
+	ATAPI CD-ROM boot
+
+BIOS function:
+	version
+	delay
+	Flash memory handling ---> Return free area start
+				   write/erase can be done with MTD driver
+	LED handling
+	LED heartbeat
+
+	Distinguish manual reset, hardware reset, exception
+
+CqREEK SH-3:
+	Dip switch read
+	CTS/RTS handling
+	Don't use NMI, but handle break
+
+DONE:
+	reset/shutdown
+	RTC handling

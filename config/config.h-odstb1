@@ -1,0 +1,4 @@
+#define CONFIG_LITTLE_ENDIAN	1
+#define CONFIG_STB1OVERDRIVE	1
+#define CONFIG_SCIF		1
+#define CONFIG_SCIF_TTY0        1

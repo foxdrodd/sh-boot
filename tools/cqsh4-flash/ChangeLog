@@ -1,0 +1,24 @@
+2001-02-14  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* Makefile (flash-eb): New entry for big endian version.
+
+	* flash.c (do_flash): Size is now 32K (was 16K), including
+	Ethboot.
+
+2000-11-26  NIIBE Yutaka  <gniibe@m17n.org>
+
+	Follow the changes of the GNU Toolchain.
+	* shelf.x: Use elf32-shbig-linux.
+	* Makefile (flash.o): Use -m4-nofpu (was: -m4).
+
+2000-07-25  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* flash.c (do_flash): Double the size.
+
+2000-02-27  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* Makefile (CROSS_COMPILE): Use new environment.
+
+1999-10-05  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* flash.c (flash_write_word): Confitionalize with SWAP.

@@ -1,5 +1,5 @@
 /*
- *	$Id: init-hp600.S,v 1.1 2000-05-28 18:48:38+09 gniibe Exp $
+ *	$Id: init-hp600.S,v 1.1 2000/05/28 09:48:38 gniibe Exp $
  *	gdb-sh-stub/init-hp600.S
  */
 

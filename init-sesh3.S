@@ -1,4 +1,4 @@
-/* $Id: init-sesh3.S,v 1.8 2000-05-06 17:02:35+09 gniibe Exp $
+/* $Id: init-sesh3.S,v 1.9 2001/01/09 05:58:21 gniibe Exp $
  *
  *  gdb-sh-stub/init-sesh3.S
  *
@@ -7,6 +7,7 @@
  */
 
 #include "linkage.h"
+
 ENTRY(init_bsc)
 	mov.l	FRQCR_A,r1	/* FRQCR Address */
 	mov.l	FRQCR_D,r0	/* FRQCR Data */
@@ -77,10 +78,23 @@ ENTRY(init_bsc)
 	mov	#0,r0
 	mov.b	r0,@r1
 
+	mov.l	BOOT_CONFIG_WORD,r1
+	mov.w	@r1,r0
+	exts.b	r0,r0
+	cmp/eq	#0xde,r0	! MAGIC # for "doDEs"
+	bf	1f
+	mov.l	0f,r5
+	mov.l	0f,r6
+	mov.l	0f,r7
+	bra	1f
+	 nop
+	.align	2
+0:	.long 0xbabeface
+1:
 	rts
 	 nop
 
-	.balign 4
+	.align 2
 
 FRQCR_A:
 	.long	0xFFFFFF80	/* FRQCR Address */
@@ -141,3 +155,5 @@ RFCR_D:
 	.long	0xA400		/* RFCR Write Code A4h Data 00h */
 SDMR3_A:
 	.long	0xFFFFE888	/* SDMR3 Address */
+BOOT_CONFIG_WORD:
+	.long	0xb0800000

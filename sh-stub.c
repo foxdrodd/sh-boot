@@ -1,4 +1,4 @@
-/* $Id: sh-stub.c,v 1.20 2000-06-21 22:19:40+09 gniibe Exp gniibe $
+/* $Id: sh-stub.c,v 1.38 2001/06/04 09:09:19 gniibe Exp $
  *
  * gdb-sh-stub/sh-stub.c -- debugging stub for the Hitachi-SH. 
  * Based on sh-stub.c distributed with GDB-4.18.
@@ -150,6 +150,8 @@
 	So 
 	"0* " means the same as "0000".  */
 
+#include "config.h"
+#include "defs.h"
 #include "string.h"
 #include "setjmp.h"
 
@@ -176,67 +178,29 @@
 #define RTE_INSTR		0x002b
 #define TRAPA_INSTR		0xc300
 
-#define SSTEP_INSTR		0xc320
-
+#define SSTEP_TRAP		0x20
 #define BIOS_CALL_TRAP		0x3f
 
+#define SSTEP_INSTR		(TRAPA_INSTR | SSTEP_TRAP)
+
 #define T_BIT_MASK		0x0001
-/*
- * BUFMAX defines the maximum number of characters in inbound/outbound
- * buffers at least NUMREGBYTES*2 are needed for register packets
- */
-#define BUFMAX 1024
-
-/*
- * Number of bytes for registers
- */
-#define NUMREGBYTES 92
-
-extern void putDebugChar (char);
-extern char getDebugChar (void);
 
 /*
  * Forward declarations
  */
 
 static int hex (char);
-static char *mem2hex (char *, char *, int);
-static char *hex2mem (char *, char *, int);
-static char *ebin2mem (char *, char *, int);
+static char *hex2mem (const char *, char *, int);
+static char *ebin2mem (const char *, char *, int);
 static int hexToInt (char **, int *);
 static void getpacket (char *);
-static void putpacket (char *);
+/* static void putpacket (char *); */
 static int computeSignal (int exceptionVector);
 
-static void handle_bios_call (void);
-
-/*
-  Runs at P2 Area
-
-  VBR = 0xa0000000
-
-  ROM:
-   0xa0000000 ---> [ .text  ]
-
-  RAM:
-  		   [ .data  ]  <-------   RAM = 0xa8000000
-		   [ .bss   ]
-   init_stack ---> [ .stack ]  RAM+0x0a00
-		      :
-		   [        ]
-		   [        ]  RAM+0x0eff <--- init_sp (= initial R15)
-   stub_stack ---> [ .stack ]  RAM+0x0F00
-		      :
-		   [        ]
-		   [        ]  RAM+0x1000 <--- stub_sp (= stub R15) 
- */
-
-#define stub_stack_size	64
-#define init_stack_size	320
-static int init_stack[init_stack_size]
-	__attribute__ ((section (".stack"))) = {0};
-int stub_stack[stub_stack_size]
-	__attribute__ ((section (".stack"))) = {0};
+#ifdef CONFIG_SESH4
+static unsigned char load_led_value;
+static void leds(unsigned char);
+#endif
 
 /* When you link take care that this is at address 0 -
    or wherever your vbr points */
@@ -252,21 +216,13 @@ int stub_stack[stub_stack_size]
 
 char in_nmi;   /* Set when handling an NMI, so we don't reenter */
 int dofault;  /* Non zero, bus errors will raise exception */
-
-int *stub_sp;
+char stepped;
 
 /* debug > 0 prints ill-formed commands in valid packets & checksum errors */
 static int remote_debug;
 
 /* jump buffer used for setjmp/longjmp */
 static jmp_buf remcomEnv;
-
-enum regnames
-{
-  R0,  R1, R2,  R3,  R4,   R5,   R6,  R7, 
-  R8,  R9, R10, R11, R12,  R13,  R14, R15, 
-  PC,  PR, GBR, VBR, MACH, MACL, SR,
-};
 
 typedef struct
 {
@@ -276,17 +232,16 @@ typedef struct
 
 unsigned int registers[NUMREGBYTES / 4];
 static stepData instrBuffer;
-static char stepped;
 static const char hexchars[] = "0123456789abcdef";
-static char remcomInBuffer[BUFMAX];
-static char remcomOutBuffer[BUFMAX];
+char remcomInBuffer[BUFMAX];
+char remcomOutBuffer[OUTBUFMAX];
 
-static char highhex(int  x)
+char highhex(int  x)
 {
   return hexchars[(x >> 4) & 0xf];
 }
 
-static char lowhex(int  x)
+char lowhex(int  x)
 {
   return hexchars[x & 0xf];
 }
@@ -309,11 +264,24 @@ hex (char ch)
 
 /* convert the memory, pointed to by mem into hex, placing result in buf */
 /* return a pointer to the last char put in buf (null) */
-static char *
-mem2hex (char *mem, char *buf, int count)
+char *
+mem2hex (const char *mem, char *buf, int count)
 {
   int i;
   int ch;
+  unsigned short s_val;
+  unsigned long l_val;
+
+  if(count == 2 && ((long)mem & 1) == 0)
+  {
+    s_val = *(unsigned short *)mem;
+    mem = (char *)&s_val;
+  }
+  else if(count == 4 && ((long)mem & 3) == 0)
+  {
+    l_val = *(unsigned long *)mem;
+    mem = (char *)&l_val;
+  }
   for (i = 0; i < count; i++)
     {
       ch = *mem++;
@@ -328,7 +296,7 @@ mem2hex (char *mem, char *buf, int count)
 /* return a pointer to the character after the last byte written */
 
 static char *
-hex2mem (char *buf, char *mem, int count)
+hex2mem (const char *buf, char *mem, int count)
 {
   int i;
   unsigned char ch;
@@ -348,7 +316,7 @@ hex2mem (char *buf, char *mem, int count)
  */
 
 static char *
-ebin2mem (char *buf, char *mem, int count)
+ebin2mem (const char *buf, char *mem, int count)
 {
   for ( ; count>0 ; count--, buf++)
     {
@@ -454,11 +422,10 @@ getpacket (char *buffer)
 /* send the packet in buffer.  The host get's one chance to read it.
    This routine does not wait for a positive acknowledge.  */
 
-static void
+void
 putpacket (register char *buffer)
 {
   register  int checksum;
-  register  int count;
 
   /*  $<packet info>#<checksum>. */
   do
@@ -559,47 +526,163 @@ static inline unsigned int ctrl_inl(unsigned long addr)
 	return *(volatile unsigned long*)addr;
 }
 
-#if defined(__sh3__)
-#define flush_icache_range(start,end)	do {} while(0)
-#elif defined(__SH4__)
-#define L1_CACHE_BYTES 32
-#define CACHE_IC_ADDRESS_ARRAY	0xf0000000
-#define CACHE_IC_ENTRY_MASK	0x1fe0
-
-struct __large_struct { unsigned long buf[100]; };
-#define __m(x) (*(struct __large_struct *)(x))
-
 static inline void ctrl_outl(unsigned int b, unsigned long addr)
 {
         *(volatile unsigned long*)addr = b;
 }
 
+
+/*
+ * Jump to P2 area.
+ * When handling TLB or caches, we need to do it from P2 area.
+ */
+#define jump_to_P2()			\
+do {					\
+	unsigned long __dummy;		\
+	__asm__ __volatile__(		\
+		"mov.l	1f, %0\n\t"	\
+		"or	%1, %0\n\t"	\
+		"jmp	@%0\n\t"	\
+		" nop\n\t" 		\
+		".balign 4\n"		\
+		"1:	.long 2f\n"	\
+		"2:"			\
+		: "=&r" (__dummy)	\
+		: "r" (0x20000000));	\
+} while (0)
+
+/*
+ * Back to P1 area.
+ */
+#define back_to_P1()					\
+do {							\
+	unsigned long __dummy;				\
+	__asm__ __volatile__(				\
+		"nop;nop;nop;nop;nop;nop;nop\n\t"	\
+		"mov.l	1f, %0\n\t"			\
+		"jmp	@%0\n\t"			\
+		" nop\n\t"				\
+		".balign 4\n"				\
+		"1:	.long 2f\n"			\
+		"2:"					\
+		: "=&r" (__dummy));			\
+} while (0)
+
+#if defined(__sh3__)
+#define CCR		 0xffffffec
+#define CCR_CACHE_INIT	 0x0000000d	/* 8k-byte cache, CF, P1-wb, enable */
+#define CCR_CACHE_STOP	 0x00000008
+#define CCR_CACHE_ENABLE 0x00000001
+
+#define flush_icache_range(start,end)	do {} while(0)
+
+/* SH7707, SH7708, SH7709 has less cache than SH7709A,
+   but it's OK to have bigger value. */
+#define CACHE_OC_ADDRESS_ARRAY	0xf0000000
+#define CACHE_OC_WAY_SHIFT	12   /*  11 */
+#define CACHE_OC_NUM_ENTRIES	256  /* 128 */
+#define CACHE_OC_ENTRY_SHIFT    4
+#define CACHE_OC_NUM_WAYS	4
+
+#elif defined(__SH4__)
+#define CCR		 0xff00001c
+#define CCR_CACHE_INIT	 0x0000090d	/* ICI,ICE(8k), OCI,P1-wb,OCE(16k) */
+#define CCR_CACHE_STOP	 0x00000808
+#define CCR_CACHE_ENABLE 0x00000101
+#define CCR_CACHE_ICI	 0x00000800
+
+#define L1_CACHE_BYTES 32
+#define CACHE_IC_ADDRESS_ARRAY	0xf0000000
+#define CACHE_IC_ENTRY_MASK	0x1fe0
+
+#define CACHE_OC_ADDRESS_ARRAY	0xf4000000
+#define CACHE_OC_WAY_SHIFT       13
+#define CACHE_OC_NUM_ENTRIES	512
+#define CACHE_OC_ENTRY_SHIFT      5
+#define CACHE_OC_NUM_WAYS	  1
+
 /* Write back data caches, and invalidates instructiin caches */
 void flush_icache_range(unsigned long start, unsigned long end)
 {
-	unsigned long addr, data, v;
+	unsigned long v;
 
 	start &= ~(L1_CACHE_BYTES-1);
 
 	for (v = start; v < end; v+=L1_CACHE_BYTES) {
 		/* Write back O Cache */
-		asm volatile("ocbwb	%0"
+		asm volatile("ocbwb	@%0"
 			     : /* no output */
-			     : "m" (__m(v)));
-		/* Invalidate I Cache */
-		addr = CACHE_IC_ADDRESS_ARRAY |
-			(v&CACHE_IC_ENTRY_MASK) | 0x8 /* A-bit */;
-		data = (v&0xfffffc00); /* Valid=0 */
-		ctrl_outl(data,addr);
+			     : "r" (v));
 	}
+	/* Invalidate I Cache */
+	jump_to_P2();
+	ctrl_outl(ctrl_inl(CCR) | CCR_CACHE_ICI, CCR);
+	back_to_P1();
 }
+
 #endif
 
+#define CACHE_VALID	  1
+#define CACHE_UPDATED	  2
+
+static inline void cache_wback_all(void)
+{
+  unsigned long addr, data, i, j;
+
+  jump_to_P2();
+  for (i=0; i<CACHE_OC_NUM_ENTRIES; i++)
+    for (j=0; j<CACHE_OC_NUM_WAYS; j++)
+      {
+	addr = CACHE_OC_ADDRESS_ARRAY|(j<<CACHE_OC_WAY_SHIFT)
+	  | (i<<CACHE_OC_ENTRY_SHIFT);
+	data = ctrl_inl(addr);
+	if (data & CACHE_UPDATED)
+	  {
+	    data &= ~CACHE_UPDATED;
+	    ctrl_outl(data, addr);
+	  }
+      }
+  back_to_P1();
+}
+
+#define CACHE_ENABLE      0
+#define CACHE_DISABLE     1
+
+int
+cache_control (unsigned int command)
+{
+  unsigned long ccr;
+
+  jump_to_P2();
+  ccr = ctrl_inl(CCR);
+
+  if (ccr & CCR_CACHE_ENABLE)
+    cache_wback_all();
+
+  if (command == CACHE_DISABLE)
+    ctrl_outl(CCR_CACHE_STOP, CCR);
+  else
+    ctrl_outl(CCR_CACHE_INIT, CCR);
+  back_to_P1();
+
+  return 0;
+}
+
+/*
+ * Setup a single-step.  Replace the instruction immediately
+ * after (i.e. next in the expected flow of control) the current
+ * instruction with a trap instruction, so that returning will cause
+ * only a single instruction to be executed.
+ *
+ * Note that this model is slightly broken for instructions with
+ * delay slots (e.g. B[TF]S, BSR, BRA etc), where both the branch
+ * and the instruction in the delay slot will be executed.
+ */
 static void
 doSStep (void)
 {
   short *instrMem;
-  int displacement;
+  unsigned int displacement;
   int reg;
   unsigned short opcode;
 
@@ -608,75 +691,87 @@ doSStep (void)
   opcode = *instrMem;
   stepped = 1;
 
+  /*
+   * Calculate the location where the flow of control will go to when
+   * the opcode is executed, using the opcode and saved processor state.
+   * We need to deal with all flow-transfer instructions individually;
+   * other instructions are just a trivial PC increment.
+   */
   if ((opcode & COND_BR_MASK) == BT_INSTR) /* BT */
     {
-      if (registers[SR] & T_BIT_MASK)
+      if (registers[SR] & T_BIT_MASK)	/* if T, take branch */
 	{
+	  /* Displacement is lower 8 bits of instruction,
+	   * sign extended, and multiplied by 2 (to get bytes).
+	   */
 	  displacement = (opcode & COND_DISP) << 1;
-	  if (displacement & 0x80)
-	    displacement |= 0xffffff00;
+	  if (displacement & 0x100)
+	    displacement |= 0xfffffe00;
 	  /*
 		   * Remember PC points to second instr.
 		   * after PC of branch ... so add 4
 		   */
 	  instrMem = (short *) (registers[PC] + displacement + 4);
 	}
-      else
+      else  /* if !T, drop through to next instruction */
 	instrMem += 1;
     }
   else if ((opcode & COND_BR_MASK) == BF_INSTR)	/* BF */
     {
-      if (registers[SR] & T_BIT_MASK)
+      if (registers[SR] & T_BIT_MASK) /* if T, drop through to next instruction */ 
 	instrMem += 1;
       else
 	{
 	  displacement = (opcode & COND_DISP) << 1;
-	  if (displacement & 0x80)
-	    displacement |= 0xffffff00;
+	  if (displacement & 0x100)
+	    displacement |= 0xfffffe00;
 	  /*
-		   * Remember PC points to second instr.
-		   * after PC of branch ... so add 4
-		   */
+	   * Remember PC points to second instr.
+	   * after PC of branch ... so add 4
+	   */
 	  instrMem = (short *) (registers[PC] + displacement + 4);
 	}
     }
   else if ((opcode & COND_BR_MASK) == BTS_INSTR) /* BTS */
     {
-      if (registers[SR] & T_BIT_MASK)
+      if (registers[SR] & T_BIT_MASK) /* if T, take branch */
 	{
 	  displacement = (opcode & COND_DISP) << 1;
-	  if (displacement & 0x80)
-	    displacement |= 0xffffff00;
+	  if (displacement & 0x100)
+	    displacement |= 0xfffffe00;
 	  /*
 		   * Remember PC points to second instr.
 		   * after PC of branch ... so add 4
 		   */
 	  instrMem = (short *) (registers[PC] + displacement + 4);
 	}
-      else
-	instrMem += 2;		/* We should not place trapa at the slot */
+      else  /* if !T, drop through to next instruction */
+	instrMem += 2;		/* We should not place trapa in the delay slot */
     }
   else if ((opcode & COND_BR_MASK) == BFS_INSTR) /* BFS */
     {
-      if (registers[SR] & T_BIT_MASK)
-	instrMem += 2; 		/* We should not place trapa at the slot */
-      else
+      if (registers[SR] & T_BIT_MASK)	/* if T, drop through to next instruction */
+	instrMem += 2; 		/* We should not place trapa in the delay slot */
+      else  /* if !T, take branch */
 	{
 	  displacement = (opcode & COND_DISP) << 1;
-	  if (displacement & 0x80)
-	    displacement |= 0xffffff00;
+	  if (displacement & 0x100)
+	    displacement |= 0xfffffe00;
 	  /*
-		   * Remember PC points to second instr.
-		   * after PC of branch ... so add 4
-		   */
+	   * Remember PC points to second instr.
+	   * after PC of branch ... so add 4
+	   */
 	  instrMem = (short *) (registers[PC] + displacement + 4);
 	}
     }
   else if ((opcode & UCOND_DBR_MASK) == BRA_INSTR) /* BRA/BSR */
     {
+      /* Displacement is lower 12 bits of instruction,
+       * sign extended, and multiplied by 2 (to get bytes).
+       */
       displacement = (opcode & UCOND_DISP) << 1;
-      if (displacement & 0x0800)
-	displacement |= 0xfffff000;
+      if (displacement & 0x1000)
+	displacement |= 0xffffe000;
 
       /*
 	   * Remember PC points to second instr.
@@ -686,6 +781,7 @@ doSStep (void)
     }
   else if ((opcode & UCOND_RBR_MASK) == JSR_INSTR) /* JMP/JSR */
     {
+      /* register is bits 8-11 */
       reg = (char) ((opcode & UCOND_REG) >> 8);
 
       instrMem = (short *) registers[reg];
@@ -694,12 +790,12 @@ doSStep (void)
     {
       reg = (char) ((opcode & UCOND_REG) >> 8);
 
-      instrMem = (short *) (registers[reg] + (registers[PC]&0xfffffffc) + 4);
+      instrMem = (short *) (registers[reg] + registers[PC] + 4);
     }
-  else if (opcode == RTS_INSTR)
+  else if (opcode == RTS_INSTR)     /* 0x000b */
     instrMem = (short *) registers[PR];
-  else if (opcode == RTE_INSTR)
-    instrMem = (short *) registers[15];
+  else if (opcode == RTE_INSTR)     /* or, 0x002b ;-) */
+    instrMem = (short *) registers[/*SPC*/15];
 #if 0				/* following code is for SH-1 */
   else if ((opcode & TRAPA_MASK) == TRAPA_INSTR)
     instrMem = (short *) ((opcode & ~TRAPA_MASK) << 2);
@@ -707,8 +803,12 @@ doSStep (void)
   else
     instrMem += 1;
 
+  /*
+   * Insert a single-step trap instruction at the calculated location.
+   */
   instrBuffer.memAddr = instrMem;
   instrBuffer.oldInstr = *instrMem;
+  /* ensure the instruction executed is the one we just wrote */
   *instrMem = SSTEP_INSTR;
   flush_icache_range((unsigned long)instrMem, (unsigned long)(instrMem+1));
 }
@@ -790,6 +890,11 @@ gdb_handle_exception (int exceptionVector, int trapa_value)
 	case 'G':		/* set the value of the CPU registers - return OK */
 	  hex2mem (&remcomInBuffer[1], (char *) registers, NUMREGBYTES);
 	  strcpy (remcomOutBuffer, "OK");
+#if CONFIG_SESH4
+			/* Bump the leds, but only if it's part of a program load */
+			if (length > 32)
+			  leds(load_led_value++);
+#endif
 	  break;
 
 	  /* mAA..AA,LLLL  Read LLLL bytes at address AA..AA */
@@ -804,6 +909,8 @@ gdb_handle_exception (int exceptionVector, int trapa_value)
 		  if (hexToInt (&ptr, &length))
 		    {
 		      ptr = 0;
+		      if (length*2 > OUTBUFMAX)
+			length = OUTBUFMAX/2;
 		      mem2hex ((char *) addr, remcomOutBuffer, length);
 		    }
 	      if (ptr)
@@ -818,7 +925,7 @@ gdb_handle_exception (int exceptionVector, int trapa_value)
 
 	  /* MAA..AA,LLLL: Write LLLL bytes (encoded hex) at address AA.AA return OK */
 	  /* XAA..AA,LLLL: Write LLLL bytes (encoded escaped-binary) at address AA.AA return OK */
-	case 'M':
+ 	case 'M':
 	case 'X':
 	  if (setjmp (remcomEnv) == 0)
 	    {
@@ -835,6 +942,7 @@ gdb_handle_exception (int exceptionVector, int trapa_value)
 			    hex2mem (ptr, (char *) addr, length);
 			else
 			    ebin2mem (ptr, (char *) addr, length);
+			flush_icache_range(addr, addr+length);
 			ptr = 0;
 			strcpy (remcomOutBuffer, "OK");
 		      }
@@ -867,6 +975,16 @@ gdb_handle_exception (int exceptionVector, int trapa_value)
 	  /* kill the program */
 	case 'k':		/* do nothing */
 	  break;
+	  
+	  /* detach          D               Reply OK. */
+	case 'D':   	    	/* detach from program */
+	  ingdbmode = 0;
+	  /* reply to the request */
+	  putpacket ("OK");
+	  /* Wait for user to type a character at terminal program on host. */
+	  getDebugChar ();
+	  /* continue execution */
+	  return;
 	}			/* switch */
 
       /* reply to the request */
@@ -880,13 +998,35 @@ gdb_handle_exception (int exceptionVector, int trapa_value)
 #define TRA 0xff000020
 #endif
 
-static int ingdbmode;
+char ingdbmode;	/* nonzero -> gdb is listening on host */
+
+#ifdef CONFIG_SESH4
+/*
+ * Set current value of the 8 LEDs on the SH4 SolutionEngine board.
+ */
+static void
+leds(unsigned char v)
+{
+#ifdef CONFIG_CPU_SUBTYPE_SH7751
+    *((volatile unsigned short *)0xba000000) = (v << 8);
+#else /* !CONFIG_CPU_SUBTYPE_SH7751 */
+    *((volatile unsigned short *)0xb0c00000) = (v << 8);
+#endif /* !CONFIG_CPU_SUBTYPE_SH7751 */
+}
+#endif
 
 /* We've had an exception - choose to go into the monitor or
    the gdb stub */
 void handle_exception(int exceptionVector)
 {
-  int trapa_value = ctrl_inl(TRA);
+  int trapa_value = ctrl_inl (TRA);
+
+  if (exceptionVector == NMI_VEC)
+    {
+      ingdbmode = 1;
+      gdb_handle_exception (exceptionVector, 0xff);
+      return;
+    }
 
   switch (trapa_value >> 2)
     {
@@ -896,6 +1036,7 @@ void handle_exception(int exceptionVector)
       break;
 
     default:
+      /* among others, handles the breakpoint instruction trapa #0xff */
       ingdbmode = 1;
       gdb_handle_exception (exceptionVector, trapa_value);
       break;
@@ -911,79 +1052,4 @@ void
 breakpoint (void)
 {
   asm volatile("trapa	#0xff");
-}
-
-void
-start_gdbstub (void)
-{
-  in_nmi = 0;
-  dofault = 1;
-  stepped = 0;
-
-  stub_sp = stub_stack + stub_stack_size;
-  breakpoint ();
-
-  while (1)
-    ;
-}
-
-/* 
-   R0: Function Number
-   R4-R7: Input Arguments
-   R0: Return value
- */
-static void
-handle_bios_call (void)
-{
-  unsigned int func = registers[R0];
-  unsigned int arg0 = registers[R4];
-  unsigned int arg1 = registers[R5];
-  unsigned int arg2 = registers[R6];
-  unsigned int arg3 = registers[R7];
-  unsigned int ret;
-
-  switch (func)
-    {
-    case 0:
-      /* Serial output */
-      if (ingdbmode)
-	{
-	  char *p = (char *)arg0;
-
-	  remcomOutBuffer[0] = 'O';
-	  memcpy (remcomOutBuffer+1, p, strlen (p));
-	  putpacket (remcomOutBuffer);
-	}
-      else
-	{
-	  int ch;
-	  char *p = (char *)arg0;
-
-	  while ((ch = *p++))
-	    putDebugChar (ch);
-	}
-      ret = 0;
-      break;
-
-    case 1:
-      /* Second strage access */
-      /* Not implemented yet */
-      ret = ~0;
-      break;
-
-    case 255:
-      /* Detach gdb mode */
-      ingdbmode = 0;
-      putpacket ("W00");
-      getDebugChar ();
-      ret = 0;
-      break;
-
-    default:
-      /* Do nothing */
-      ret = ~0;
-      break;
-    }
-
-  registers[R0] = ret;
 }

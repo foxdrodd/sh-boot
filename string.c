@@ -20,3 +20,13 @@ void * memcpy(void * dest,const void *src,size_t count)
 
 	return dest;
 }
+
+void * memset(void * s,int c,size_t count)
+{
+	char *xs = (char *) s;
+
+	while (count--)
+		*xs++ = c;
+
+	return s;
+}

@@ -1,12 +1,43 @@
-/* $Id: init-sesh4.S,v 1.10 2000-05-09 10:31:44+09 gniibe Exp $
+/* $Id: init-sesh4.S,v 1.17 2001/06/04 09:09:19 gniibe Exp $
  *
  *  gdb-sh-stub/init-sesh4.S
  *
  *  Data taken from Chapter 11 of "SH7750 SolutionEngine Manual"
- *
+ *  Modified for SH7751 based on manual and Hitachi FW defaults.
  */
 
+#include "config.h"
 #include "linkage.h"
+
+#ifdef CONFIG_CPU_SUBTYPE_SH7751
+#define BCR2_D_VALUE	0x2FFC	   /* Area 1-6 width: 32/32/32/32/32/16 */
+#define WCR1_D_VALUE    0x02770771 /* DMA:0 A6:2 A3:0 A0:1 Others:15 */
+#define WCR2_D_VALUE    0x7FFE4FE7 /* A6:15 A6B:3 A5:15 A5B:7 A4:15
+				      A3:2  A2:15 A1:15 A0:6  A0B:7  */
+#define WCR3_D_VALUE	0x01777771 /* A6: 0-1 A5: 1-3 A4: 1-3 A3: 1-3
+				      A2: 1-3 A1: 1-3 A0: 0-1 */
+#define LED_ADDRESS	0xBA000000 /* Address of LED register */ 	
+#define RTCOR_D_VALUE	0xA50D	   /* Write code A5, data 0D (~15us?) */
+#define SDMR3_ADDRESS	0xFF940088 /* SDMR3 address on 32-bit bus */
+#define MCR_D1_VALUE	0x100901B4 /* SDRAM 32-bit, CAS/RAS Refresh, ... */
+#define MCR_D2_VALUE	0x500901B4 /* Same w/MRSET now 1 (mode reg cmd) */
+#define SWITCH_ADDR	0xB9000000 /* Address of DIP switches */
+#else /* !CONFIG_CPU_SUBTYPE_SH7751 */
+#define BCR2_D_VALUE	0x2E3C	   /* Area 1-6 width: 32/32/64/16/32/16 */
+#define WCR1_D_VALUE	0x02720777 /* DMA:0 A6:2 A4:2 A3:0 Others:15 */
+#define WCR2_D_VALUE    0xFFFE4FFF /* A6:15 A6B:7 A5:15 A5B:7 A4:15
+				      A3:2  A2:15 A1:15 A0:15 A0B:7  */
+#define WCR3_D_VALUE	0x01777771 /* A6: 0-1 A5: 1-3 A4: 0-1 A3: 1-3
+				      A2: 1-3 A1: 1-3 A0: 0-1 */
+#define LED_ADDRESS	0xB0C00000 /* Address of LED register */ 	
+#define RTCOR_D_VALUE	0xA510	   /* Write code A5, data 10 (~15us?) */
+#define SDMR3_ADDRESS	0xFF940110 /* SDMR3 address on 64-bit bus */
+#define MCR_D1_VALUE	0x8801001C /* SDRAM 64-bit, CAS/RAS Refresh, ... */
+#define MCR_D2_VALUE	0xC801001C /* Same w/MRSET now 1 (mode reg cmd) */
+#define SWITCH_ADDR	0xb0800000 /* Address of DIP switches */
+#endif /* !CONFIG_CPU_SUBTYPE_SH7751 */
+
+
 ENTRY(init_bsc)
 	mov.l	FRQCR_A,r1	/* FRQCR Address */
 	mov.l	FRQCR_D,r0	/* FRQCR Data */
@@ -33,7 +64,7 @@ ENTRY(init_bsc)
 	mov.l	r0,@r1
 
 	mov.l	LED_A,r1	/* LED Address */
-	mov	#0x0f,r0	/* LED ALL 'on' */
+	mov	#0xff,r0	/* LED ALL 'on' */
 	shll8	r0
 	mov.w	r0,@r1
 
@@ -56,17 +87,15 @@ ENTRY(init_bsc)
 	mov.l	RTCOR_D,r0	/* RTCOR Data */
 	mov.w	r0,@r1
 
+	mov.l	RTCSR_A,r1	/* RTCSR Address */
+	mov.l	RTCSR_D,r0	/* RTCSR Data */
+	mov.w	r0,@r1
+
 	mov.l	RFCR_A,r1	/* RFCR Address */
 	mov.l	RFCR_D,r0	/* RFCR Data */
 	mov.w	r0,@r1		/* Clear reflesh counter */
-
-	mov.l	RTCSR_A,r1	/* RTCSR Address */
-	mov.l	RTCSR_D1,r0	/* RTCSR Data */
-	mov.w	r0,@r1
-
-	/* Wait DRAM refresh 8 times */
-	mov.l	RFCR_A,r1	/* RFCR Address */
-	mov	#8,r3
+	/* Wait DRAM refresh 30 times */
+	mov	#30,r3
 1:
 	mov.w	@r1,r0
 	extu.w	r0,r2
@@ -81,19 +110,32 @@ ENTRY(init_bsc)
 	mov	#0,r0
 	mov.b	r0,@r1
 
-	mov.l	RTCSR_A,r0
-	mov.l	RTCSR_D2,r1
-	mov.w	r1,@r0
-
+	mov.l	BOOT_CONFIG_WORD,r1
+	mov.w	@r1,r0
+	exts.b	r0,r0
+	cmp/eq	#0xde,r0	! MAGIC # for "doDEs"
+	bf	1f
+	mov.l	0f,r5
+	mov.l	0f,r6
+	mov.l	0f,r7
+	bra	1f
+	 nop
+	.align	2
+0:	.long 0xbabeface
+1:
 	rts
 	 nop
 
-	.balign 4
+	.align	2
 
 FRQCR_A:
 	.long	0xFFC00000	/* FRQCR Address */
 FRQCR_D:
+#ifdef CONFIG_OLD_SESH4
+	.long	0x00000e23	/* 6:1:1 */
+#else
 	.long	0x00000e13	/* 6:2:1 */
+#endif
 BCR1_A:
 	.long	0xFF800000	/* BCR1 Address */
 BCR1_D:
@@ -101,25 +143,21 @@ BCR1_D:
 BCR2_A:
 	.long	0xFF800004	/* BCR2 Address */
 BCR2_D:
-	.long	0x2E3C		/* Area 1:32bit Area 2:32bit Area 4:16bit 
-		                   Area 3:64bit	Area 5:32bit Area 6:16bit */
+	.long	BCR2_D_VALUE	/* Bus width settings */
 WCR1_A:
 	.long	0xFF800008	/* WCR1 Address */
 WCR1_D:
-	.long	0x02720777	/* Device-inter-cycle: 2-wait
-				   A6:15 A5:2 A4:2 A3:0 A2:15 A1:15 A0:15 */
+	.long	WCR1_D_VALUE	/* Inter-area or turnaround wait states */
 WCR2_A:
 	.long	0xFF80000C	/* WCR2 Address */
 WCR2_D:
-	.long	0xFFFE4FFF	/* A6: 15 A6B: 7 A5: 15 A5B: 7
-				   A4: 15 A3: 2 A2:15 A1:15 A0:15 A0B:7  */
+	.long	WCR2_D_VALUE	/* Per-area access and burst wait states */
 WCR3_A:
 	.long	0xFF800010	/* WCR3 Address */
 WCR3_D:
-	.long	0x01717771	/* A6: 0-1 A5: 1-3 A4: 0-1 A3: 1-3
-				   A2: 1-3 A1: 1-3 A0: 0-1 */
+	.long	WCR3_D_VALUE	/* Address setup and data hold cycles */
 LED_A:
-	.long	0xB0C00000	/* LED Address */
+	.long	LED_ADDRESS	/* LED Address */
 
 RTCNT_A:
 	.long	0xFF800020	/* RTCNT Address */
@@ -129,25 +167,24 @@ RTCNT_D:
 RTCOR_A:
 	.long	0xFF800024	/* RTCOR Address */
 RTCOR_D:
-	.long	0xA510		/* RTCOR Write Code A5h Data 10h (15us) */
+	.long	RTCOR_D_VALUE	/* Set refresh time (about 15us) */
 
 RTCSR_A:
 	.long	0xFF80001C	/* RTCSR Address */
-RTCSR_D1:
-	.long	0xA510		/* RTCSR Write Code A5h Data 10h */
-RTCSR_D2:
+RTCSR_D:
 	.long	0xA518		/* RTCSR Write Code A5h Data 18h */
 
 SDMR3_A:
-	.long	0xFF940110	/* SDMR3 Address */
+	.long	SDMR3_ADDRESS
 MCR_A:
 	.long	0xFF800014	/* MCR Address */
 MCR_D1:
-	.long	0x8801001C	/* MRSET:'0' */
+	.long	MCR_D1_VALUE
 MCR_D2:
-	.long	0xC801001C	/* MRSET:'1' */
+	.long	MCR_D2_VALUE
 RFCR_A:
 	.long	0xFF800028	/* RFCR Address */
 RFCR_D:
 	.long	0xA400		/* RFCR Write Code A4h Data 00h */
-
+BOOT_CONFIG_WORD:
+	.long	SWITCH_ADDR

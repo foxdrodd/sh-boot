@@ -1,0 +1,56 @@
+2001-06-29  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* ethboot.c (eth_probe): Revert the change of 2001-06-20.
+	node_addr shoule be filled before eth_probe (for STNIC).
+
+2001-06-20  SUGIOKA Toshinobu <sugioka@itonet.co.jp>
+
+	* string.c (strlen, memcpy, memset, do_printf, printf): Removed.
+
+	* ethboot.c (ethboot): Renamed from start.
+	(putchar, sleep128, put_string, put_string_1): Removed.
+	(eth_probe): Call eth_reset at first.
+	
+	* defs.h: Include "../config.h".
+	(MEMORY_ADDR_CONFIG, MEMORY_ADDR_KERNEL, MEMORY_ADDR_CONFIG,
+	MEMORY_ADDR_KERNEL): Removed.
+
+2001-06-04  Jeremy Siegel <jsiegel@mvista.com>
+
+	* osdep.h: Support big endian.
+
+2001-02-14  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* Makefile (ethboot-ram.exe): New entry.
+	* standalone-ram.lds: New file.
+	* ethboot.c (start): ifdef/endif ROM.
+
+	* standalone.lds: Added .got.
+
+2001-01-08  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* nic.h: Removed.
+	* etherboot.h, defs.h, osdep.h: Clean it up.
+	* ethboot.c (string_set, machine_type, serial_type, memory_size,
+	io_base, setup_parms): New functions.
+	* string.c: Move printf functions here.
+
+2001-01-06  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* bootp.c (dhcpdiscover): Do NOT request RFC1533_EXTENSIONPATH,
+	but RFC1533_ROOTPATH.
+
+2001-01-05  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* bootp.c (bootp): Wait only for TIMEOUT/10.
+
+	* Makefile (CFLAGS): Added flags: -Wno-format -fno-hosted.
+
+2001-01-04  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* etherboot.h (TIMEOUT): Set 10 seconds.
+
+2000-12-28  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* Makefile, bootp.c, defs.h, ethboot.c, etherboot.h, net.c, nfs.c,
+	nic.h, osdep.h, standalone.lds, string.c: New files.

@@ -1,4 +1,4 @@
-/* $Id: main.c,v 1.38 2001/06/06 12:29:07 sugioka Exp $
+/* $Id: main.c,v 1.45 2001/09/18 06:57:49 gniibe Exp $
  *
  * sh-ipl+g/main.c
  *
@@ -48,33 +48,35 @@ int stub_stack[stub_stack_size]
 
 int *stub_sp;
 
-static const char * const banner = "\n\
-SH IPL+g version 0.9, Copyright (C) 2000 Free Software Foundation, Inc.\n\
-\n\
-This software comes with ABSOLUTELY NO WARRANTY; for details type `w'.\n\
-This is free software, and you are welcome to redistribute it under\n\
-certain conditions; type `l' for details.\n\n";
+static const char * const banner = "\n"
+"SH IPL+g version 0.11, Copyright (C) 2001 Free Software Foundation, Inc.\n"
+"\n"
+"This software comes with ABSOLUTELY NO WARRANTY; for details type `w'.\n"
+"This is free software, and you are welcome to redistribute it under\n"
+"certain conditions; type `l' for details.\n\n";
 
-static const char * const license_message = "\n\
-SH IPL+g is free software; you can redistribute it and/or modify it under\n\
-the terms of the GNU Lesser General Public License as published by \n\
-the Free Software Foundatin; either version 2.1 of the License, or (at your
-option) any later version.\n";
+static const char * const license_message = "\n"
+"SH IPL+g is free software; you can redistribute it and/or modify it under\n"
+"the terms of the GNU Lesser General Public License as published by \n"
+"the Free Software Foundatin; either version 2.1 of the License, or (at your\n"
+"option) any later version.\n";
 
-static const char * const warranty_message = "\n\
-SH IPL+g is distributed in the hope that it will be useful, but\n\
-WITHOUT ANY WARRANTY; without even the implied warranty of\n\
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n\
-Lesser General Public License for more details.\n";
+static const char * const warranty_message = "\n"
+"SH IPL+g is distributed in the hope that it will be useful, but\n"
+"WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n"
+"Lesser General Public License for more details.\n";
 
-static const char * const help_message = "\n\
-SH IPL+g version 0.9, Copyright (C) 2000 Free Software Foundation, Inc.\n\
-    ? --- Show this message (HELP)\n\
-    b --- Boot the system\n\
-    g --- Invoke GDB stub\n\
-    l --- Show about license\n\
-    w --- Show about (no)warranty\n\
-"
+static const char * const help_message = "\n"
+"SH IPL+g version 0.11, Copyright (C) 2001 Free Software Foundation, Inc.\n"
+"    ? --- Show this message (HELP)\n"
+"    b --- Boot the system\n"
+"    g --- Invoke GDB stub\n"
+"    l --- Show about license\n"
+"    w --- Show about (no)warranty\n\n"
+#if defined(CONFIG_ETHERNET)
+"    e --- Ether Boot\n"
+#endif
 #if defined(CONFIG_BOOT_LOADER1)
 "    1 --- Boot loader 1\n"
 #endif
@@ -84,6 +86,7 @@ SH IPL+g version 0.9, Copyright (C) 2000 Free Software Foundation, Inc.\n\
 ; /* Nasty dangling ; for initialisation - don't delete! */
 
 static char *prompt;
+int expevt_on_start;
 
 #if defined(CONFIG_IDE)
 static void
@@ -109,29 +112,6 @@ boot (void)
 }
 #endif
 
-static inline unsigned long
-get_boot_signature (void)
-{
-  unsigned long r5, r6, r7;
-
-  asm ("stc	r5_bank, %0":"=r" (r5));
-  asm ("stc	r6_bank, %0":"=r" (r6));
-  asm ("stc	r7_bank, %0":"=r" (r7));
-
-  if ((r5 == r6) && (r6 == r7))
-    return r7;
-  else
-    return 0;
-}
-
-static inline void
-set_boot_signature (unsigned long sig)
-{
-  asm volatile ("ldc	%0, r5_bank": : "r" (sig));
-  asm volatile ("ldc	%0, r6_bank": : "r" (sig));
-  asm volatile ("ldc	%0, r7_bank": : "r" (sig));
-}
-
 void
 start_main (void)
 {
@@ -153,7 +133,24 @@ start_main (void)
     }
 #endif
 
-  if (get_boot_signature () == 0xbabeface)
+#if defined(CONFIG_AUTO_BOOT_IDE)
+  if (AUTO_BOOT_IDE_CHECK && (ide_detect_devices () == 0))
+    {
+      sti ();
+      ide_startup_devices ();
+      boot ();
+    }
+#endif
+
+#if defined(CONFIG_ETHERNET)
+  if (AUTO_BOOT_ETHER_CHECK)
+    {
+      sti ();
+      etherboot ();
+    }
+#endif
+
+  if (expevt_on_start != 0)
     {				/* Reboot */
       putString ("!\n");
 #ifdef CONFIG_IDE
@@ -164,32 +161,16 @@ start_main (void)
 	  boot ();
 	}
 #endif
+#ifdef CONFIG_ETHERNET
+      sti ();
+      etherboot ();
+#endif
 #ifdef CONFIG_BOOT_LOADER1
       sti ();
       asm volatile ("jmp @r0; nop"
 		    : : "z" (CONFIG_BOOT_LOADER1));
 #endif
     }
-
-#ifdef CONFIG_CAT68701
-  if (get_boot_signature () != 0xdeadbeef && !(cat68701_read_dipsw () &1))
-    {
-      ide_detect_devices ();
-      sti ();
-      ide_startup_devices ();
-      boot ();
-    }
-#endif
-
-#ifdef CONFIG_SH2000
-  if (get_boot_signature () != 0xdeadbeef && (sh2000_read_dipsw () & 0x10) != 0
-     && ide_detect_devices () == 0)
-    {
-      sti ();
-      ide_startup_devices ();
-      boot ();
-    }
-#endif
 
   while (1)
     {
@@ -236,6 +217,14 @@ start_main (void)
 	  putString ("w");
 	  putString (warranty_message);
 	  break;
+#if defined(CONFIG_ETHERNET)
+	case 'e':
+	  /* Ether Boot */
+	  sti ();
+	  putString ("e");
+	  etherboot ();
+	  break;
+#endif
 #if defined(CONFIG_BOOT_LOADER1)
 	case '1':
 	  /* Boot loader 1 */
@@ -378,9 +367,14 @@ handle_bios_call (void)
       break;
 #if defined(CONFIG_MEMORY_SIZE)
     case 4:
+#if defined(CONFIG_CAT68701)
+      ret = cat68701_read_mem_size();
+      break;
+#else
       /* Memory size in bytes */
       ret = CONFIG_MEMORY_SIZE;
       break;
+#endif
 #endif
 #if defined(CONFIG_IO_BASE)
     case 5:
@@ -530,6 +524,7 @@ static int
 shutdown (unsigned int func)
 {
   extern void start ();		/* In entry.S */
+  unsigned long __dummy;
 
   set_BL ();
   disable_MMU ();
@@ -541,23 +536,21 @@ shutdown (unsigned int func)
     {
     default:
     case 0:			/* HALT */
-      set_boot_signature (0xdeadbeef);
+      putString("halted.\n");
+      asm volatile ("1: sleep; bra 1b; nop");
       break;
     case 1:			/* REBOOT */
-      set_boot_signature (0xbabeface);
+      putString("restart.\n");
+      /* Cause address error with BL=1 */
+      asm volatile ("1: mov.l @%1,%0; bra 1b; nop"
+		    : "=r" (__dummy) : "r" (0x80000001));
       break;
     /* ACPI support? */
     }
 
-  set_RB ();
-  asm volatile ("jmp @r0; nop"
-		: : "z" (start));
-
   /* Never reached */ 
   return 0;
 }
-
-#include "io.h"
 
 #if defined(__sh3__)
 #define MMUCR		0xFFFFFFE0	/* MMU Control Register */
@@ -676,7 +669,7 @@ static unsigned long get_tick_1 (void)
   return cnt128 + 128*(sec+60*(min+60*hour));
 }
 
-static void reset_tick (void)
+void reset_tick (void)
 {
   tick = get_tick_1 ();
 }
@@ -684,7 +677,7 @@ static void reset_tick (void)
 static int rtc_error;
 static unsigned long last_tick;
 
-static unsigned long get_tick (void)
+unsigned long get_tick (void)
 {
   unsigned long raw;
 
@@ -695,7 +688,7 @@ static unsigned long get_tick (void)
     {
       if (rtc_error == 0)
 	{
-	  putString("Time goes backward!  RTC Problem.\n");
+	  putString("Time goes backward!  RTC Problem, work around...OK\n");
 	  rtc_error++;
 	}
 

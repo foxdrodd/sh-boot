@@ -1,4 +1,4 @@
-/* $Id: init-sesh4.S,v 1.17 2001/06/04 09:09:19 gniibe Exp $
+/* $Id: init-sesh4.S,v 1.18 2001/06/29 13:44:47 gniibe Exp $
  *
  *  gdb-sh-stub/init-sesh4.S
  *
@@ -25,9 +25,9 @@
 #else /* !CONFIG_CPU_SUBTYPE_SH7751 */
 #define BCR2_D_VALUE	0x2E3C	   /* Area 1-6 width: 32/32/64/16/32/16 */
 #define WCR1_D_VALUE	0x02720777 /* DMA:0 A6:2 A4:2 A3:0 Others:15 */
-#define WCR2_D_VALUE    0xFFFE4FFF /* A6:15 A6B:7 A5:15 A5B:7 A4:15
+#define WCR2_D_VALUE	0xFFFE4FFF /* A6:15 A6B:7 A5:15 A5B:7 A4:15
 				      A3:2  A2:15 A1:15 A0:15 A0B:7  */
-#define WCR3_D_VALUE	0x01777771 /* A6: 0-1 A5: 1-3 A4: 0-1 A3: 1-3
+#define WCR3_D_VALUE	0x01717771 /* A6: 0-1 A5: 1-3 A4: 0-1 A3: 1-3
 				      A2: 1-3 A1: 1-3 A0: 0-1 */
 #define LED_ADDRESS	0xB0C00000 /* Address of LED register */ 	
 #define RTCOR_D_VALUE	0xA510	   /* Write code A5, data 10 (~15us?) */
@@ -131,10 +131,10 @@ ENTRY(init_bsc)
 FRQCR_A:
 	.long	0xFFC00000	/* FRQCR Address */
 FRQCR_D:
-#ifdef CONFIG_OLD_SESH4
-	.long	0x00000e23	/* 6:1:1 */
-#else
+#ifdef CONFIG_GOOD_SESH4
 	.long	0x00000e13	/* 6:2:1 */
+#else
+	.long	0x00000e23	/* 6:1:1 */
 #endif
 BCR1_A:
 	.long	0xFF800000	/* BCR1 Address */

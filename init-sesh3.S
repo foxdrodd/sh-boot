@@ -1,4 +1,4 @@
-/* $Id: init-sesh3.S,v 1.9 2001/01/09 05:58:21 gniibe Exp $
+/* $Id: init-sesh3.S,v 1.11 2002/02/09 04:17:46 yoshii Exp $
  *
  *  gdb-sh-stub/init-sesh3.S
  *
@@ -7,11 +7,18 @@
  */
 
 #include "linkage.h"
+#include "config.h"
 
 ENTRY(init_bsc)
 	mov.l	FRQCR_A,r1	/* FRQCR Address */
 	mov.l	FRQCR_D,r0	/* FRQCR Data */
 	mov.w	r0,@r1
+
+#ifdef CONFIG_SESH3_LARGE
+	mov.l	PECR_A,r1	/* PECR_A Address */
+	mov.l	PECR_D,r0	/* PECR_D Address */
+	mov.w	r0,@r1
+#endif
 
 	mov.l	BCR1_A,r1	/* BCR1 Address */
 	mov.l	BCR1_D,r0	/* BCR1 Data */
@@ -100,6 +107,12 @@ FRQCR_A:
 	.long	0xFFFFFF80	/* FRQCR Address */
 FRQCR_D:
 	.long	0x00000122	/* 4:1:1 */
+#ifdef CONFIG_SESH3_LARGE
+PECR_A:
+	.long	0xA4000108
+PECR_D:
+	.long	0x0000AA8A	/* or 2A88??? */
+#endif	
 BCR1_A:
 	.long	0xFFFFFF60	/* BCR1 Address */
 BCR1_D:
@@ -154,6 +167,6 @@ RFCR_A:
 RFCR_D:
 	.long	0xA400		/* RFCR Write Code A4h Data 00h */
 SDMR3_A:
-	.long	0xFFFFE888	/* SDMR3 Address */
+	.long	0xFFFFE880	/* SDMR3 Address */
 BOOT_CONFIG_WORD:
 	.long	0xb0800000

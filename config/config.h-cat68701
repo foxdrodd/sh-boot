@@ -2,9 +2,22 @@
 #define CONFIG_CAT68701			1
 #define CONFIG_SCI			1
 #define CONFIG_IDE			1
-#define CONFIG_RAM_BOOT			0x8c200000
 #define CONFIG_DIRECT_COMPACT_FLASH	1
+#define CONFIG_ROM_START		0x80000000
+#define CONFIG_ROM_LENGTH		0x8000
+#define CONFIG_RAM_START		0x8c000000
+#define CONFIG_RAM_BOOT			(CONFIG_RAM_START+0x200000)
 #define CONFIG_IO_BASE			0xba000000
-#define CONFIG_MEMORY_SIZE		0x01000000
+#define CONFIG_MEMORY_SIZE		cat68701_read_mem_size()
 #define CONFIG_CIS_BASE                 0xb8000000
+#define CONFIG_AUTO_BOOT_IDE		1
+#define AUTO_BOOT_IDE_CHECK		(!(cat68701_read_dipsw () &1))
 
+/* ethernet chip (cs89x0) */
+#define CONFIG_ETHERNET                 1
+#define CS_SCAN                         0xb4000000      /* ether chip base address */
+
+#ifndef __ASSEMBLY__
+extern int cat68701_read_dipsw(void);
+extern int cat68701_read_mem_size(void);
+#endif

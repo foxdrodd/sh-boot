@@ -1,4 +1,4 @@
-/* $Id: ide.c,v 1.14 2001/06/06 12:29:07 sugioka Exp $
+/* $Id: ide.c,v 1.16 2001/06/26 07:34:55 gniibe Exp $
  *
  * sh-ipl+g/ide.c
  *
@@ -138,7 +138,18 @@ init_ide (void)
   /* Configure IDE1 */
   smsc_config(CURRENT_LDN_INDEX, LDN_IDE1);
   smsc_config(ACTIVATE_INDEX, 0x01);
+#if 0
   smsc_config(IRQ_SELECT_INDEX, 14); /* IRQ14 */
+#else
+  /*
+   * We don't use interrupt for IDE access
+   *
+   * If we enable IRQ here, it doesn't work with no expantion board.
+   * That is, enable CONFIG_ETHER&CONFIG_IDE, and just use ether
+   * doesn't work right.
+   */
+  smsc_config(IRQ_SELECT_INDEX, 0);
+#endif
 
   /* Configure AUXIO (GPIO): to use IDE1 */
   smsc_config(CURRENT_LDN_INDEX, LDN_AUXIO);
@@ -372,7 +383,7 @@ ide_get_data (unsigned char *buf, int count)
       for (i=0; i<TIMEOUT; i++)
         {
 	  status = ide_inb (IDE_STATUS);
-	  if (status == IDE_RDY | IDE_DSC)
+	  if (status == (IDE_RDY | IDE_DSC))
 	    break;
 	  delay256 ();
 	}

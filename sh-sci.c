@@ -1,4 +1,4 @@
-/* $Id: sh-sci.c,v 1.45 2001/06/06 12:29:07 sugioka Exp $
+/* $Id: sh-sci.c,v 1.48 2003/08/31 05:07:21 yoshii Exp $
  *
  * sh-ipl+g/sh-scif.c
  *
@@ -14,6 +14,9 @@
 
 #include "config.h"
 #include "io.h"
+
+#if (defined(CONFIG_SCI) || defined(CONFIG_SCIF))
+/* with serial-console */
 
 #if defined(CONFIG_SCI)
 #define SCSCR_INIT 	0x0030 /* TIE=0,RIE=0,TE=1,RE=1 */
@@ -78,6 +81,8 @@
 #define BPS_SETTING_VALUE	8 /* 8: 115200 bps */
 #elif defined(CONFIG_HP600)
 #define BPS_SETTING_VALUE	5
+#elif defined(CONFIG_SE09)
+#define BPS_SETTING_VALUE	0
 #elif defined(CONFIG_CAT68701)
 #define BPS_SETTING_VALUE       8 /* 115200 bps */ 
 #elif defined(CONFIG_SH2000)
@@ -101,6 +106,12 @@
 				  /* 54: 19200 bps */
 				  /* 108: 9600 */
 #endif
+#endif
+
+#if defined(CONFIG_SE09)
+#define SCSCR_CKE 3
+#else
+#define SCSCR_CKE 0
 #endif
 
 #if defined(CONFIG_SCI)
@@ -153,14 +164,13 @@ init_serial(void)
 #if defined(CONFIG_SCIF)
   p4_out(SCFCR, 0x0006);	/* TFRST=1, RFRST=1 */
 #endif
+  p4_out(SCSCR, SCSCR_CKE);	/* TE=0, RE=0 */
   p4_out(SCSMR, 0x0000);	/* CHR=0, PE=0, STOP=0, CKS=00 */
   			/* 8-bit, non-parity, 1 stop bit, pf/1 clock */
 
   p4_outb(SCBRR, BPS_SETTING_VALUE);
 
-  p4_outw(RFCR, 0xa400);		/* Refresh counter clear */
-  while(p4_inw(RFCR) < WAIT_RFCR_COUNTER)
-    ;
+  sleep128(1);			/* wait at least 1bit-time */
 
 #if defined(CONFIG_SCIF)
 #if defined(__sh3__)
@@ -170,7 +180,7 @@ init_serial(void)
     data = p4_inw(SCPCR);
     /* Clear out SCP7MD1,0, SCP4MD1,0,
        Set SCP6MD1,0 = {01} (output)  */
-    p4_outw(SCPCR, (data&0x0fcf)|0x1000);
+    p4_outw(SCPCR, (data&0x0cff)|0x1000);
 
     data = p4_inb(SCPDR);
     /* Set /RTS2 (bit6) = 0 */
@@ -183,7 +193,7 @@ init_serial(void)
   				/* MCE=0,TFRST=0,RFRST=0,LOOP=0 */
 #endif
 
-  p4_out(SCSCR, SCSCR_INIT);
+  p4_out(SCSCR, SCSCR_INIT|SCSCR_CKE);
 }
 
 static inline int
@@ -297,3 +307,40 @@ putString (char *str)
       putDebugChar (*p);
     }
 }
+
+#else /*if (defined(CONFIG_SCI) || defined(CONFIG_SCIF))*/
+/* without serial-console */
+
+void
+handleError (void)
+{
+}
+
+void
+init_serial(void)
+{
+}
+
+int
+getDebugCharTimeout (int count)
+{
+	return 0;
+}
+
+char 
+getDebugChar (void)
+{
+	return 0;
+}
+
+void
+putDebugChar (char ch)
+{
+}
+
+void
+putString (char *str)
+{
+}
+
+#endif /*if (defined(CONFIG_SCI) || defined(CONFIG_SCIF))*/

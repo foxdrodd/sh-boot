@@ -7,6 +7,16 @@
 #define	PORT_PCDR	0xa4000124
 #define	PORT_PDDR	0xa4000126
 #define	PORT_PFDR	0xa400012a
+#define MCR_ADDR	0xffffff68
+
+unsigned long get_memory_size(void)
+{
+	int amx = (*(volatile unsigned short *)MCR_ADDR >> 3) & 7;
+	if (amx == 4)
+		return 16 << 20;
+	else
+		return 32 << 20;
+}
 
 int sh2000_read_dipsw(void)
 {

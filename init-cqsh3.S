@@ -1,4 +1,4 @@
-/* $Id: init-cqsh3.S,v 1.11 2001/02/14 05:57:29 gniibe Exp $
+/* $Id: init-cqsh3.S,v 1.13 2001/08/09 12:55:58 sugioka Exp $
  *  Taken from the manual of CQ RISC Evaluatin Kit for SH-3
  *  Copyright (C) 1998 CQ Publishing.
  *
@@ -54,8 +54,8 @@ ENTRY(init_bsc)
 
 	/* Wait DRAM refresh 8 times */
 	mov.l	RFCR_A,r1	/* RFCR Address */
-	mov.l	RFCR_D,r0	/* RFCR Data */
-	mov.l	r0,@r1		/* Clear reflesh counter */
+	mov.w	RFCR_D,r0	/* RFCR Data */
+	mov.w	r0,@r1		/* Clear reflesh counter */
 	mov	#8,r3
 1:
 	mov.w	@r1,r0
@@ -144,8 +144,13 @@ ENTRY(init_bsc)
 	mov.l	CF_COR_A,r1
 	mov.w	CF_COR_D2,r0
 	mov.w	r0,@r1
-	bra	4b
-	nop
+	mov.l	0f,r5
+	mov.l	0f,r6
+	mov.l	0f,r7
+	bra	3f
+	 nop
+	.align	2
+0:	.long 0xbabeface
 # endif
 3:
 #endif

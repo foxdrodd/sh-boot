@@ -1,4 +1,4 @@
-/* $Id: entry.S,v 1.31 2001/06/04 09:09:19 gniibe Exp $
+/* $Id: entry.S,v 1.33 2001/08/09 12:55:58 sugioka Exp $
  *
  * sh-ipl+g/entry.S
  *
@@ -39,8 +39,11 @@ TMU0_TCR = 0xffd80010
 ENTRY(start)
    	/*
 	 * This code executes at powerup and manual reset,
-	 * at location 0x00000000 (P0) with the MMU disabled.
+	 * at location 0xa0000000 (P2) with the MMU disabled.
 	 */
+	mov.l	8f,r0
+	mov.l	@r0,r13			/* save EXPEVT */
+
 	/* Disable cache */
 	mov.l	CCR_A, r1		/* CCR Address */
 	mov.l	CCR_DISABLE, r0	/* CCR Data */
@@ -57,8 +60,8 @@ ENTRY(start)
 	mov.l	r0, @r1
 
 	/* Initialize VBR */
-	/* While the initial code executes from P0, the new
-	 * value of the VBR points to P2 (0xA0000000) which
+	/* While the initial code executes from P2, the new
+	 * value of the VBR points to P2 (0xA0000000) or P1 (0x80000000) which
 	 * is where the stub code is linked.  This ensures that
 	 * the exception handlers can run regardless of the
 	 * setting of the MMU and cache when the trap occurs.
@@ -69,7 +72,7 @@ ENTRY(start)
 	mov.l	VBR_INIT, r0
 	ldc	r0, vbr
 
-	/* SR: MD=1, BL=1, RB=0 */
+	/* SR: MD=1, BL=1, RB=0, IMASK=0xf */
 	mov.l	INITIAL_SR, r0
 	ldc	r0, sr
 
@@ -95,6 +98,9 @@ ENTRY(start)
 	jsr	@r0
 	 nop
 #endif
+	mov.l	7f,r0
+	mov.l	r13,@r0		/* set initial EXPEVT */
+
 	/* Jump to GDB Stub */
 	mov.l	6f, r0
 	jmp	@r0
@@ -109,12 +115,14 @@ ENTRY(start)
 5:	.long	SYMBOL_NAME(init_ide)
 #endif
 6:	.long	SYMBOL_NAME(start_main)
+7:	.long	SYMBOL_NAME(expevt_on_start)
+8:	.long	EXPEVT
 CCR_A:	.long	CCR
 CCR_DISABLE:
 	.long	CCR_CACHE_DISABLE
 CCR_D:	.long	CCR_CACHE_INIT
 INITIAL_SR:
-	.long	0x50000000	/* MD=1, RD=0, BL=1 */
+	.long	0x500000f0	/* MD=1, RD=0, BL=1, IMASK=0xf */
 INITIAL_STACK:
 	.long	SYMBOL_NAME(stub_stack)
 VBR_INIT:
@@ -274,17 +282,17 @@ ENTRY(interrupt_table)
 saveRegisters:
 	mov.l	L_reg, r0
 	mov.l	@r15+, r1			! pop R0
-	mov.l	r2, @(0x08, r0)		! save R2
-	mov.l	r1, @r0			! save R0
+	mov.l	r2, @(0x08, r0)			! save R2
+	mov.l	r1, @r0				! save R0
 	mov.l	@r15+, r1			! pop R1
-	mov.l	r3, @(0x0c, r0)		! save R3
-	mov.l	r1, @(0x04, r0)		! save R1
-	mov.l	r4, @(0x10, r0)		! save R4
-	mov.l	r5, @(0x14, r0)		! save R5
-	mov.l	r6, @(0x18, r0)		! save R6
-	mov.l	r7, @(0x1c, r0)		! save R7
-	mov.l	r8, @(0x20, r0)		! save R8
-	mov.l	r9, @(0x24, r0)		! save R9
+	mov.l	r3, @(0x0c, r0)			! save R3
+	mov.l	r1, @(0x04, r0)			! save R1
+	mov.l	r4, @(0x10, r0)			! save R4
+	mov.l	r5, @(0x14, r0)			! save R5
+	mov.l	r6, @(0x18, r0)			! save R6
+	mov.l	r7, @(0x1c, r0)			! save R7
+	mov.l	r8, @(0x20, r0)			! save R8
+	mov.l	r9, @(0x24, r0)			! save R9
 	mov.l	r10, @(0x28, r0)		! save R10
 	mov.l	r11, @(0x2c, r0)		! save R11
 	mov.l	r12, @(0x30, r0)		! save R12
@@ -404,15 +412,15 @@ user_break:
 2:	mov.l	3f, r0
 	stc	sr, r1
 	and	r0, r1
-	ldc	r1, sr		! sti (enable interrupt)
+	ldc	r1, sr			! sti (enable interrupt)
 	mov	r15, r0
 	add	#8, r0
 	stc	r2_bank, r1
 	bra	saveRegisters		! save register values
-	 mov.l	r1, @r0		! save exception #
+	 mov.l	r1, @r0			! save exception #
 
 	.align	2
-3:	.long	0xefffffff	! BL=0
+3:	.long	0xefffffff		! BL=0
 
 nmi:
 	add	#-4, r15		! reserve spot on stack

@@ -1,3 +1,0 @@
-#define CONFIG_LITTLE_ENDIAN 1
-#define CONFIG_TEST	1
-#define CONFIG_SCI	1

@@ -50,7 +50,7 @@ ENTRY(init_bsc)
 	mov.w	r0,@r1
 
 	mov.l	MCR_A,r1	/* MCR Address */
-	mov.w	MCR_D,r0	/* MCR Data1 */
+	mov.w	MCR_D_32M,r0	/* MCR Data for 32MB SDRAM */
 	mov.w	r0,@r1
 
 	mov.l   SDMR_A,r1       /* SDRAM MODE REGISTER */
@@ -69,6 +69,10 @@ ENTRY(init_bsc)
 	mov.w	ICR2_D,r0	/* ICR2 Data */
 	mov.w	r0,@r1
 
+	mov.l	PCCR_A,r1	/* PCCR Address */
+	mov.w	PCCR_D,r0	/* PCCR Data */
+	mov.w	r0,@r1
+
 	mov.l	PDCR_A,r1	/* PDCR Address */
 	mov.w	PDCR_D,r0	/* PDCR Data */
 	mov.w	r0,@r1
@@ -77,6 +81,14 @@ ENTRY(init_bsc)
 	mov.w	@r1,r0
 	mov.w	PECR_MASK,r2	/* PECR MASK */
 	and	r2,r0
+	mov.w	r0,@r1
+
+	mov.l	PFCR_A,r1	/* PFCR Address */
+	mov.w	@r1,r0
+	mov.w	PFCR_MASK,r2	/* PFCR MASK */
+	and	r2,r0
+	mov.w	PFCR_D,r2	/* PFCR Data */
+	or	r2,r0
 	mov.w	r0,@r1
 
 	mov.l	PHCR_A,r1	/* PHCR Address */
@@ -96,8 +108,8 @@ ENTRY(init_bsc)
 
 	/* Wait DRAM refresh 8 times */
 	mov.l	RFCR_A,r1	/* RFCR Address */
-	mov.l	RFCR_D,r0	/* RFCR Data */
-	mov.l	r0,@r1		/* Clear reflesh counter */
+	mov.w	RFCR_D,r0	/* RFCR Data */
+	mov.w	r0,@r1		/* Clear reflesh counter */
 	mov	#8,r3
 1:
 	mov.w	@r1,r0
@@ -105,6 +117,25 @@ ENTRY(init_bsc)
 	cmp/hi	r3,r2
 	bf	1b
 
+	/* determine installed SDRAM size */
+	mov	#0x55,r0
+	mov	#0xaa,r1
+	mov.l	2f,r2
+	mov.b	r0,@r2
+	mov.l	3f,r3
+	mov.b	r1,@r3
+	mov.b	@r2,r4
+	cmp/eq	r0,r4
+	bt	1f
+	mov.l	MCR_A,r1	/* MCR Address */
+	mov.w	MCR_D_16M,r0	/* MCR Data for 16MB SDRAM */
+	mov.w	r0,@r1
+	bra	1f
+	 nop
+	.align	2
+2:	.long	CONFIG_RAM_START
+3:	.long	CONFIG_RAM_START+0x400
+1:
 #if defined(CONFIG_DIRECT_COMPACT_FLASH) && defined(CONFIG_IDE)
 	/* wait until power on reset complete */
 	mov.l	DLY_CNT,r0
@@ -172,10 +203,14 @@ ICR1_A:
 	.long	0xa4000010
 ICR2_A:
 	.long	0xa4000012
+PCCR_A:
+	.long	0xa4000104
 PDCR_A:
 	.long	0xa4000106
 PECR_A:
 	.long	0xa4000108
+PFCR_A:
+	.long	0xa400010a
 PHCR_A:
 	.long	0xa400010e
 IRR0_A:
@@ -218,8 +253,10 @@ RTCSR_D:
 	.word	0xa508
 RTCOR_D:
 	.word	0xa5e1
-MCR_D:
+MCR_D_16M:
 	.word	0x5564
+MCR_D_32M:
+	.word	0x556c
 RFCR_D:
 	.word	0xa400
 ICR0_D:
@@ -228,10 +265,16 @@ ICR1_D:
 	.word	0x0001
 ICR2_D:
 	.word	0x0001
+PCCR_D:
+	.word	0xaaaa
 PDCR_D:
 	.word	0x000a
 PECR_MASK:
 	.word	~0x0f00
+PFCR_MASK:
+	.word	0xff00
+PFCR_D:
+	.word	0x00aa
 PHCR_MASK:
 	.word	~0x03f3
 LED_D:

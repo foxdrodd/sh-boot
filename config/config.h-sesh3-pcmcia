@@ -1,7 +1,4 @@
-#define CONFIG_LITTLE_ENDIAN	1
-#define CONFIG_SESH3		1
-#define CONFIG_SCIF		1
+#include "config/config.h-sesh3"
+
 #define CONFIG_IDE		1
-#define CONFIG_RAM_BOOT	0x8c200000
-#define CONFIG_SOLUTION_ENGINE  1
 #define CONFIG_MRSHPC           1

@@ -1,0 +1,7 @@
+#include "config/config.h-sesh3"
+
+#define CONFIG_IDE			1
+#define CONFIG_ETHERNET			1
+#define CONFIG_ETHER_ADDRESS_ARRAY	{0x00, 0x00, 0x02, 0x00, 0x00, 0x00}
+#define CONFIG_ETHER_CONFIG_WORD	0xb0800002
+#define CONFIG_STNIC			1

@@ -1,3 +1,143 @@
+2003-08-31  YOSHII Takashi <takasi-y@ops.dti.ne.jp>
+	* sh-sci.c(init_serial): Bug fix. SCPCR mask 0x0cff (was 0x0fcf).
+
+2003-08-31  YOSHII Takashi <takasi-y@ops.dti.ne.jp>
+	* Makefile, sh-sci.c, stnic-se.h: Add MS7709SE/RP support.
+	* init-se09.c: New file for MS7709SE/RP support.
+	* config/config.h-se09, config/config.mk-se09,
+	  config/config.h-se09-eth, config/config.mk-se09-eth: ditto.
+
+2002-01-23  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* Makefile (CFLAGS): Fixed for new toolchain.
+	Use -mno-implict-fp.
+
+	SolutionEngine SH7709A 64MB support.
+	* init-sesh3.S (init_bsc): Setup PECR register.
+	* config/config.h-sesh3-ide-eth-large: New file.
+	* config/config.h-sesh3-large: New file.
+	* config/config.h-sesh3eb-ide-eth-large: New file.
+
+2001-09-18  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* Makefile: Fix for new toolchain.
+	* main.c (banner, help_message): Version 0.11.
+	* Through out: Fix multiline strings.
+	* (shutdown): Add __dummy.
+
+2001-08-09  SUGIOKA Toshinobu <sugioka@itonet.co.jp>
+
+	* Makefile: Add "-D__ASSEMBLY__" for process sh-stub.lds.S.
+	* defs.h (AUTO_BOOT_IDE_CHECK): Clean-up. (AUTO_BOOT_ETHER_CHECK) Added.
+	(cat68701*) Moved to config/config.h-cat68701.
+	* entry.S (start): Read EXPEVT when startup for later use.
+	Set initial IMASK to 0xf.
+	* init-cqsh3.S (init_bsc): Bug fix. RFCR access size should be word.
+	(was dword)
+	* init-sh2000.S (init_bsc): Add memory size detection.
+	Add PCCR, PFCR initialization.
+	* main.c (get_boot_signature, set_boot_signature): Removed.
+	(expevt_on_start): New variable. (start_main): Clean up auto boot.
+	(shutdown): Do reboot by causing address error while BL=1.
+	* sh2000.c (get_memory_size): New function.
+	* config/config.h-apsh4 (CONFIG_MEMORY_SIZE, CONFIG_ROM_START,
+	CONFIG_ROM_LENGTH, CONFIG_RAM_START, CONFIG_RAM_BOOT): Defined.
+	* config/config.h-cat68701 (CONFIG_MEMORY_SIZE): Redefined.
+	(AUTO_BOOT_IDE_CHECK, cat68701_read_dipsw, cat68701_read_mem_size):
+	Moved from defs.h.
+	* config/config.h-sh2000 (CONFIG_MEMORY_SIZE): Redefined.
+	(CONFIG_AUTO_BOOT_IDE, AUTO_BOOT_IDE_CHECK, AUTO_BOOT_ETHER_CHECK):
+	Defined. (sh2000_read_dipsw, get_memory_size): Declared.
+
+2001-08-09  Yutarou Ebihara <ebiharaml@si-linux.com>
+
+	* init-cat68701.S (init_bsc): Autodetect 16 or 32 megabyte memory.
+	* config/config.h-cat68701 config/config.mk-cat68701
+	(CONFIG_ETHERNET, CS_SCAN): Added.
+	* main.c (handle_bios_call): Added autodetect main memory size
+	(cat68701 only).
+	* cat68701.c (cat68701_read_mem_size): New function.
+
+2001-08-08  Yutarou Ebihara <ebiharaml@si-linux.com>
+
+	* init-cat68701.S : Change Compact Flash power up sequence.
+	(WCR1_D): value changed to 0x3c03 (was 0x3c02).
+
+2001-07-20  Masahiro ABE <m-abe@aandd.co.jp>
+
+	* config/{config.h-adx,config.h-adx-scif,config.mk-adx} : New file.
+	* config/config.h-cat68701 : Added CONFIG_AUTO_BOOT_IDE.
+	(CONFIG_ROM_START, CONFIG_ROM_LENGTH, CONFIG_RAM_START,
+	CONFIG_RAM_BOOT): Defined.
+	* Makefile : Added CONFIG_ADX.
+	* defs.h : Added general IDE Auto-booting feature support.
+	* main.c (start_main): make Auto-boot code usable for other board.
+	* sh-sci.c : Do nothing if both CONFIG_SCI/SCIF not defined.
+
+2001-07-02  SUGIOKA Toshinobu <sugioka@itonet.co.jp>
+
+	* cs89x0.c (detect_tp): Change cable detection timeout to 
+	4sec (was 150msec).
+	(eth_reset): Remove reset_chip().
+	(eth_transmit): Retry without reset_chip() when READY_FOR_TX_NOW is
+	not set. Change transmission timeout to 1sec (was 100msec).
+	(eth_node_addr): Do chip probe when device is not probed yet.
+
+	* ethboot/ethboot.c (setup_parms): Add 'rw' option to 'root='.
+
+2001-06-29  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.lds.S: Remove _ethboot_end and _ethboot_edata.
+	Added __ethboot_data_end.
+
+	* init-sesh4.S (WCR3_D_VALUE): Fix the value (was: 0x01717771), 
+	which is mistakenly introduced in 2001-06-04.
+	(FRQCR_D): Use 6:2:1 only if CONFIG_GOOD_SESH4 is defined.
+	Default is !CONFIG_GOOD_SESH4.
+
+	* sh-stub.lds.S: Fix ADDR using .text (was: .rodata).
+	* defs.h (ethboot): Added declaration.
+	* vsprintf.c (printf): Added declaration.
+
+2001-06-26  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.lds.S: Put .rodata into ROM to avoid two sections in
+	SREC.
+
+	* ide.c (init_ide): Don't enable IRQ for SolutionEngine.
+
+2001-06-21  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* main.c (banner, help_message): Version 0.10.
+
+	* vprintf.c: Remove inclusion of <linux/types.h>.
+	(size_t): Add typedef.
+
+2001-06-20  SUGIOKA Toshinobu <sugioka@itonet.co.jp>
+
+	* ethboot/bootp.c, ethboot/ChangeLog, ethboot/defs.h,
+	ethboot/ethboot.c, ethboot/etherboot.h, ethboot/Makefile,
+	ethboot/net.c, ethboot/nfs.c, ethboot/osdep.h, ethboot/README,
+	ethboot/string.c, ethboot/TODO: New Files.
+
+	* cs89x0.c, cs89x0.h, vprintf.c, ctype.c, cytpe.h: New Files.
+	* config/config.h-sh2000, config/config.mk-sh2000: New Files.
+	* config/config.h* (CONFIG_ROM_START, CONFIG_ROM_LENGTH,
+	CONFIG_RAM_START, CONFIG_RAM_BOOT): Defined.
+	(CONFIG_BOOT_LOADER1) Removed.
+	* Makefile (CROSS_COMPILE): use sh3eb-linux-gcc for big endian.
+	(MEM): Removed. (LIBGCC): Defined. (dependances): Added.
+	(etherboot): Added.
+	* defs.h (reset_tick, get_tick): Added declaration.
+	* init-cat68701.S: Change Compact Flash power up sequence.
+	* init-cqsh3.S: bug fix.
+	* main.c (start_main): Add etherboot command.
+	(shutdown): Infinitely sleeps when halt requested.
+	(reset_tick, get_tick): Globally accessible.
+	* sh-stub.lds.S (MEMORY): Added. (Etherboot support) Added.
+	* string.c (strnlen): New function.
+	* string.h (strnlen): Added.
+
 2001-06-06  SUGIOKA Toshinobu <sugioka@itonet.co.jp>
 
 	* init-sh2000.S, sh2000.c, config/config.h-sh2000,
@@ -584,7 +724,7 @@
 2000-05-09  NIIBE Yutaka  <gniibe@m17n.org>
 
 	* init-sesh4.S (FRQCR_A, FRQCR_D): Set FRQCR, as it may
-	unstable because of SCIF.
+	be unstable because of SCIF.
 	(RTCOR_D): Change the value for 66MHz.
 
 2000-05-06  NIIBE Yutaka  <gniibe@m17n.org>

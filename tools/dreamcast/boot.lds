@@ -1,5 +1,5 @@
 /*
- *	$Id: boot.lds,v 1.1 2001/06/07 04:47:07 sugioka Exp $
+ *	$Id: boot.lds,v 1.2 2003/12/12 15:34:44 lethal Exp $
  *	Copyright (C) 2000 YAEGASHI Takeshi <yaegashi@ma.kcom.ne.jp>
  */
 

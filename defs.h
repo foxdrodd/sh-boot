@@ -57,7 +57,9 @@ extern int ide_read_sectors (int, unsigned long, unsigned char *, int);
 extern void handle_bios_call (void);
 extern void printouthex (int);
 extern void printouthex32 (unsigned int);
-void sleep128 (unsigned int);
+extern void sleep128 (unsigned int);
+extern void reset_tick (void);
+extern unsigned long get_tick (void);
 
 #if defined(CONFIG_ETHERNET)
 /*
@@ -67,6 +69,11 @@ extern int eth_reset (unsigned int);
 extern int eth_receive (char *, unsigned int *);
 extern int eth_transmit (const char *, unsigned int, unsigned int, const char *);
 extern int eth_node_addr (unsigned int, char *);
+
+/*
+ * ethboot.c
+ */
+extern void etherboot (void);
 #endif
 
 #if defined(CONFIG_CPU_SUBTYPE_SH7751) && defined(CONFIG_PCI)
@@ -77,4 +84,13 @@ extern int init_pcic (void);
 extern unsigned long pci_read_config_dword (unsigned long offset);
 extern void pci_write_config_dword (unsigned long offset, unsigned long data);
 extern unsigned long pci_nextio, pci_nextmem;
+#endif
+
+/* Auto-boot support */
+#if defined(CONFIG_AUTO_BOOT_IDE) && !defined(AUTO_BOOT_IDE_CHECK)
+# define AUTO_BOOT_IDE_CHECK	(1)
+#endif
+
+#if defined(CONFIG_ETHERNET) && !defined(AUTO_BOOT_ETHER_CHECK)
+# define AUTO_BOOT_ETHER_CHECK	(1)
 #endif

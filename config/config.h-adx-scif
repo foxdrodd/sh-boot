@@ -1,0 +1,3 @@
+#include "config/config.h-adx"
+
+#define CONFIG_SCIF			1

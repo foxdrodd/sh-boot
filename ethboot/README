@@ -1,0 +1,28 @@
+This is an Ethernet bootloader for SuperH.
+
+You can use this tiny program in the ROM of your target board along
+with SH IPL+g.  This program may be distributed under GNU Lesser GPL.
+
+					Niibe Yutaka  <gniibe@m17n.org>
+					Nezu Bunkyo-ku Tokyo
+					JAPAN
+					November 2000
+
+Most of the code is taken from etherboot-4.6.  Please take a visit
+at http://etherboot.sourceforge.net/
+
+
+SETTING of DHCP
+
+--------------
+hardware hardware-type hardware-address;
+filename "filename";
+next-server server-name;
+
+option subnet-mask ip-address;
+option host-name string;
+option routers ip-address [, ip-address...  ];
+option root-path string;
+option option-128 "DODES";
+option option-129 "command line";
+--------------

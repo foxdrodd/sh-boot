@@ -1,0 +1,5 @@
+#include "config/config.h-sesh3"
+
+#define CONFIG_SESH3_LARGE	1
+#undef CONFIG_MEMORY_SIZE
+#define CONFIG_MEMORY_SIZE	0x04000000

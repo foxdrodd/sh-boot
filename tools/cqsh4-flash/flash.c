@@ -1,4 +1,4 @@
-/* $Id: flash.c,v 1.1 2001/06/07 04:47:07 sugioka Exp $
+/* $Id: flash.c,v 1.2 2003/12/12 15:34:44 lethal Exp $
 
    Flash ROM Writing routine for TC58FVB800FT-85
 

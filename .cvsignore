@@ -2,3 +2,7 @@ config.h
 config.mk
 sh-stub.lds
 sh-stub.srec
+sh-stub.rom
+sh-stub.map
+sh-stub.hex
+sh-stub.bin

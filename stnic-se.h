@@ -20,8 +20,13 @@
 
 #define D8390_REMOTE_IO	D83902A_REMOTE_IO
 
+#ifdef CONFIG_SE09
+#define START_PG	128
+#define STOP_PG		255
+#else
 #define START_PG	0	/* First page of TX buffer */
 #define STOP_PG		128	/* Last page +1 of RX ring */
+#endif
 
 static inline volatile unsigned short *
 port2adr(unsigned short port)

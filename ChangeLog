@@ -1,4 +1,14 @@
-2004-12-22  Hiroshi DOYU  <doyu@kk.iij4u.or.jp>
+2005-01-14  Hiroshi DOYU  <Hiroshi_DOYU@montavista.co.jp>
+
+	SolutionEngine SHMobile SH7300 support.
+	* string.c: "strcpy()" added
+	* Makefile,entry.S,sh-sci.c: Modified for SH7300
+	* main.c: Moved rtc functions into "rtc.c"
+	* rtc.c: Derived from "main.c"
+	* init-seshmv.S,smc9000.c,smc9000.h: New files
+	* config/config.h-seshmv-eth,config/config.mk-seshmv-eth: New files.
+
+2004-12-22  Hiroshi DOYU  <Hiroshi_DOYU@montavista.co.jp>
 
 	* config.{h.mk}-sesh4-7751r-eth: Added for network boot on SolutionEngine SH7751R
 	

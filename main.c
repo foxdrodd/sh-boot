@@ -1,4 +1,4 @@
-/* $Id: main.c,v 1.2 2003/12/12 15:34:43 lethal Exp $
+/* $Id: main.c,v 1.3 2004/12/22 08:55:25 doyu Exp $
  *
  * sh-ipl+g/main.c
  *
@@ -15,8 +15,11 @@
 #include "string.h"
 #include "io.h"
 
+extern int rtc (unsigned int, unsigned int);
+extern void init_serial (void);
+extern void start (void);	/* In entry.S */
+
 static int shutdown (unsigned int);
-static int rtc (unsigned int, unsigned int);
 
 /*
   Runs at P2 Area
@@ -115,7 +118,6 @@ boot (void)
 void
 start_main (void)
 {
-  extern void start ();		/* In entry.S */
   char c;
 
   in_nmi = 0;
@@ -124,6 +126,10 @@ start_main (void)
   prompt = "> ";
 
   stub_sp = stub_stack + stub_stack_size;
+
+  rtc(0,0);
+  init_serial();
+
   putString (banner);
 
 #if defined(CONFIG_CPU_SUBTYPE_SH7751) && defined(CONFIG_PCI)
@@ -523,7 +529,6 @@ static void reset_interrupt_request_sources (void);
 static int
 shutdown (unsigned int func)
 {
-  extern void start ();		/* In entry.S */
   unsigned long __dummy;
 
   set_BL ();
@@ -579,156 +584,4 @@ reset_interrupt_request_sources (void)
   p4_outb(TMU_TSTR, 0);
 
   /* ... and others */
-}
-
-#if defined(CONFIG_CPU_SH3)
-#define R64CNT  	0xfffffec0
-#define RSECCNT 	0xfffffec2
-#define RMINCNT 	0xfffffec4
-#define RHRCNT  	0xfffffec6
-#define RCR1    	0xfffffedc
-
-#define RTC_BIT_CHANGE 0x00 /* No bug */
-#elif defined(CONFIG_CPU_SH4)
-#define R64CNT  	0xffc80000
-#define RSECCNT 	0xffc80004
-#define RMINCNT 	0xffc80008
-#define RHRCNT  	0xffc8000c
-#define RCR1    	0xffc80038
-
-#define RTC_BIT_CHANGE 0x40	/* We have bug on SH-4 */
-#endif
-
-#define RCR1_CF		0x80	/* Carry Flag             */
-
-void
-sleep128 (unsigned int count)
-{
-  unsigned int cur128 = p4_inb (R64CNT) ^ RTC_BIT_CHANGE;
-  unsigned int n = (cur128 + count) % 128;
-  unsigned int m = (cur128 + count) / 128;
-
-  if (count == 0)
-    return;
-
-  while (m != 0)
-    {
-      /* Wait next one tick */
-      while ((p4_inb (R64CNT) ^ RTC_BIT_CHANGE) == cur128)
-	/* Do nothing */
-	asm volatile ("" : : :"memory");
-
-      m--;
-
-      /* Wait next 127 ticks */
-      while ((p4_inb (R64CNT) ^ RTC_BIT_CHANGE) != cur128)
-	/* Do nothing */
-	asm volatile ("" : : :"memory");
-    }
-
-  while ((p4_inb (R64CNT) ^ RTC_BIT_CHANGE) != n)
-    /* Do nothing */
-    asm volatile ("" : : :"memory");
-}
-
-/*
- * Unit is 1/128 sec.
- * It doesn't overflow within a day = 24 * 60 * 60 * 128
- */
-static unsigned long tick;
-
-#define BCD_TO_BIN(val) ((val)=((val)&15) + ((val)>>4)*10)
-
-static unsigned long get_tick_1 (void)
-{
-  unsigned int cnt128, sec, min, hour;
-
-  while (1)
-    {
-      p4_outb (RCR1, 0);  /* Clear CF-bit */
-
-      cnt128 = (p4_inb (R64CNT) ^ RTC_BIT_CHANGE);
-#if RTC_BIT_CHANGE != 0
-      /* RCR1_CF doesn't work well. */
-      if (cnt128 == 0)
-	continue;
-#endif
-
-      sec = p4_inb (RSECCNT);
-      min = p4_inb (RMINCNT);
-      hour = p4_inb (RHRCNT);
-
-      if ((p4_inb (RCR1) & RCR1_CF) == 0)
-	break;
-    }
-
-  BCD_TO_BIN(sec);
-  BCD_TO_BIN(min);
-  BCD_TO_BIN(hour);
-
-  return cnt128 + 128*(sec+60*(min+60*hour));
-}
-
-void reset_tick (void)
-{
-  tick = get_tick_1 ();
-}
-
-static int rtc_error;
-static unsigned long last_tick;
-
-unsigned long get_tick (void)
-{
-  unsigned long raw;
-
-  raw = get_tick_1 ();
-
-  /* This bug was hit by SH-4's RTC */
-  if (raw < last_tick && last_tick-raw < 128)
-    {
-      if (rtc_error == 0)
-	{
-	  putString("Time goes backward!  RTC Problem, work around...OK\n");
-	  rtc_error++;
-	}
-
-      /* Work around */
-      raw = last_tick;
-    }
-
-  last_tick = raw;
-
-  if (raw + (24*60*60*128/4) < tick)		/* Wrap around */
-    return 24*60*60*128+raw-tick; 
-  else
-    return raw-tick;
-}
-
-/* XXX: This will be hardware dependent... */ 
-static int
-rtc (unsigned int func, unsigned int arg)
-{
-  switch (func)
-    {
-    case 0:	/* Initialize & start */
-      return 0;			/* Be called, but not supported yet */
-
-    case 1:	/* Stop */
-    case 2:	/* Set */
-    case 3:     /* Get */
-      return -1;		/* Not supported yet */
-
-    case 4:	/* Sleep128 */
-      sleep128 (arg);
-      return 0;
-
-    case 5:
-      reset_tick ();
-      return 0;
-    case 6:
-      return get_tick ();
-
-    default:
-      return -1;
-    }
 }

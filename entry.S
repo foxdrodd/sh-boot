@@ -15,7 +15,15 @@
 #include "config.h"
 #include "linkage.h"
 
-#if defined(CONFIG_CPU_SH3)
+#if defined(CONFIG_CPU_SUBTYPE_SH7300)
+TRA      = 0xffffffd0
+EXPEVT   = 0xffffffd4
+INTEVT   = 0xA4000000 /* INTEVT2 */
+TMU0_TCR = 0xA412FE9C
+#define CCR			0xFFFFFFEC
+#define CCR_CACHE_DISABLE	0x008		/* Flush the cache, disable */
+#define CCR_CACHE_INIT		0x0		/* disable */
+#elif defined(CONFIG_CPU_SH3)
 TRA      = 0xffffffd0
 EXPEVT   = 0xffffffd4
 INTEVT   = 0xffffffd8
@@ -88,10 +96,6 @@ ENTRY(start)
 	bf/s	9b		! while (r1 < r2)
 	 mov.l	r0, @-r2
 
-	/* Initialize Serial Port */
-	mov.l	4f, r0
-	jsr	@r0
-	 nop
 #if defined(CONFIG_IDE)
 	/* Initialize IDE */
 	mov.l	5f, r0
@@ -110,7 +114,6 @@ ENTRY(start)
 1:	.long	SYMBOL_NAME(init_bsc)
 2:	.long	SYMBOL_NAME(__bss_start)
 3:	.long	SYMBOL_NAME(__bss_end)
-4:	.long	SYMBOL_NAME(init_serial)
 #if defined(CONFIG_IDE)
 5:	.long	SYMBOL_NAME(init_ide)
 #endif

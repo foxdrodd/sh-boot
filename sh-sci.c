@@ -37,7 +37,27 @@
 #endif
 #elif defined(CONFIG_SCIF)
 #define SCSCR_INIT 	0x0038 /* TIE=0,RIE=0,REIE=1,TE=1,RE=1 */
-#if defined(CONFIG_CPU_SH3)
+#if defined(CONFIG_CPU_SUBTYPE_SH7300)
+/* Pin function controller */
+/* SCIF */
+#define SCPCR 	(volatile unsigned short *)0xA4050116
+#define SCPDR   (volatile unsigned short *)0xA4050136
+
+#define SCSMR  (volatile unsigned short *)0xA4430000
+#define SCBRR  0xA4430004
+#define SCSCR  (volatile unsigned short *)0xA4430008
+#define SCTDSR (volatile unsigned char  *)0xA443000C
+#define SCFER  (volatile unsigned short *)0xA4430010
+#define SCSSR  (volatile unsigned short *)0xA4430014
+#define SC_SR SCSSR
+#define SCFCR  (volatile unsigned short *)0xA4430018
+#define SCFDR  0xA443001C
+#define SCFTDR 0xA4430020
+#define SCFRDR 0xA4430024
+#define SC_TDR SCFTDR
+#define SC_RDR SCFRDR
+
+#elif defined(CONFIG_CPU_SH3)
 #define SCSMR  (volatile unsigned char *)0xA4000150
 #define SCBRR  0xA4000152
 #define SCSCR  (volatile unsigned char *)0xA4000154
@@ -74,47 +94,12 @@
 #endif /* CONFIG_CPU_SH4 */
 #endif /* CONFIG_SCIF */
 
-#if defined(CONFIG_CPU_SH3)
-
-#define RFCR    0xffffff74
-#if defined(CONFIG_SESH3)
-#define BPS_SETTING_VALUE	8 /* 8: 115200 bps */
-#elif defined(CONFIG_HP600)
-#define BPS_SETTING_VALUE	5
-#elif defined(CONFIG_SE09)
-#define BPS_SETTING_VALUE	0
-#elif defined(CONFIG_CAT68701)
-#define BPS_SETTING_VALUE       8 /* 115200 bps */ 
-#elif defined(CONFIG_SH2000)
-#define BPS_SETTING_VALUE       7 /* 115200 bps */ 
+#if defined(CONFIG_CPU_SUBTYPE_SH7300)
+#define BPS_SETTING_VALUE	(((CONFIG_PCLK_FREQ*1.0)/(16*CONFIG_BPS))-0.5)
 #else
-#define BPS_SETTING_VALUE	3 /* 3: 115200 bps */
-#endif
+#define BPS_SETTING_VALUE	(((CONFIG_PCLK_FREQ*1.0)/(32*CONFIG_BPS))-0.5)
+#endif /* CONFIG_CPU_SUBTYPE_SH7300 */
 
-#elif defined(CONFIG_CPU_SH4)
-
-#define RFCR    0xFF800028
-#if defined(CONFIG_APSH4)
-#define BPS_SETTING_VALUE	6 /* 6: 115200 bps */
-#elif defined(CONFIG_DREAMCAST)
-#define BPS_SETTING_VALUE	13 /* 13: 115200 bps */
-#elif defined(CONFIG_SESH4) && defined(CONFIG_CPU_SUBTYPE_SH_R)
-#define BPS_SETTING_VALUE	47
-                                  /* Using a 20.000 MHz clock */
-                                  /* 15: 115200 bps (1.7% off) */
-                                  /* 31:  57600 bps (1.7% off) */
-                                  /* 47:  38400 bps (1.7% off) */
-                                  /* 96:  19200 bps (.68% off) */
-                                  /* 194:  9600 bps (.16% off) */
-#elif defined(CONFIG_SESH4) && defined(CONFIG_CPU_SUBTYPE_SH7751)
-#define BPS_SETTING_VALUE	6 /* 6: 115200 bps */
-#else
-#define BPS_SETTING_VALUE	8 /* 3: 230400 bps */
-				  /* 8: 115200 bps */
-				  /* 54: 19200 bps */
-				  /* 108: 9600 */
-#endif
-#endif
 
 #if defined(CONFIG_SE09)
 #define SCSCR_CKE 3
@@ -137,6 +122,20 @@
 
 #elif defined(CONFIG_SCIF)
 
+#if defined(CONFIG_CPU_SUBTYPE_SH7300)
+#define SCI_ER        (1<<7)
+#define SCI_TEND      (1<<6)
+#define SCI_TD_E      (1<<5)
+#define SCI_BRK       (1<<4)
+#define SCI_FER       (1<<3)
+#define SCI_PER       (1<<2)
+#define SCI_RD_F      (1<<1)
+#define SCIF_ORER     (1<<9)
+
+#define SCI_TDRE_CLEAR    ((~(SCI_TEND|SCI_TD_E))&0xffff)
+#define SCI_RDRF_CLEAR    ((~(SCI_RD_F))&0xffff)
+#define SCI_ERROR_CLEAR   0
+#else
 #define SCI_ER    0x0080
 #define SCI_TD_E  0x0020
 #define SCI_BRK   0x0010
@@ -150,6 +149,7 @@
 #define SCI_ERROR_CLEAR		0x0063
 #define SCIF_ORERR_CLEAR	0x0000
 
+#endif
 #endif
 
 #define WAIT_RFCR_COUNTER	500

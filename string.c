@@ -20,6 +20,15 @@ size_t strnlen(const char * s, size_t count)
 	return sc - s;
 }
 
+char * strcpy(char * dest,const char *src)
+{
+        char *tmp = dest;
+
+        while ((*dest++ = *src++) != '\0')
+                /* nothing */;
+        return tmp;
+}
+
 void * memcpy(void * dest,const void *src,size_t count)
 {
 	char *tmp = (char *) dest, *s = (char *) src;

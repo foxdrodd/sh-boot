@@ -1,0 +1,16 @@
+#define CONFIG_PCLK_FREQ           19800000
+#define CONFIG_BPS                 38400
+#define CONFIG_LITTLE_ENDIAN	   1
+#define CONFIG_SCIF		   1
+#define CONFIG_SOLUTION_ENGINE     1
+#define CONFIG_CPU_SH3             1
+#define CONFIG_CPU_SUBTYPE_SH7300  1
+#define CONFIG_ETHERNET            1
+
+#define CONFIG_ROM_START	   0x80000000
+#define CONFIG_ROM_LENGTH	   0x8000
+#define CONFIG_RAM_START	   0x8c000000
+#define CONFIG_RAM_BOOT		   (CONFIG_RAM_START+0x200000)
+#define CONFIG_MEMORY_SIZE	   0x04000000
+
+

@@ -15,7 +15,7 @@ LD	=$(CROSS_COMPILE)ld
 OBJCOPY =$(CROSS_COMPILE)objcopy
 NM	=$(CROSS_COMPILE)nm
 
-CFLAGS = -O2 -g -Wall
+CFLAGS = -Os -pipe -Wall -fno-hosted -fomit-frame-pointer
 
 # derived from $(TOPDIR)/Makefile
 cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
@@ -141,6 +141,19 @@ sh-stub.srec: sh-stub.exe
 	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
 		-O srec sh-stub.exe sh-stub.srec
 endif
+ifdef CONFIG_SESHMV
+MACHINE_DEPENDS :=	init-seshmv.o
+#
+ifdef CONFIG_ETHERNET
+MACHINE_DEPENDS +=	smc9000.o
+endif
+
+ADJUST_VMA=0x0
+
+sh-stub.srec: sh-stub.exe
+	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
+		-O srec sh-stub.exe sh-stub.srec
+endif
 ifdef CONFIG_SESH4
 MACHINE_DEPENDS :=	init-sesh4.o
 
@@ -234,9 +247,9 @@ sh-stub.bin: sh-stub.exe
 		sh-stub.exe sh-stub.bin
 
 sh-stub.exe: main.o sh-stub.o entry.o ${MACHINE_DEPENDS} sh-sci.o setjmp.o \
-             string.o ctype.o vprintf.o sh-stub.lds
+             string.o ctype.o vprintf.o rtc.o sh-stub.lds
 	$(LD) $(LINKFLAGS) entry.o main.o sh-stub.o ${MACHINE_DEPENDS} \
-		sh-sci.o setjmp.o string.o ctype.o vprintf.o \
+		sh-sci.o setjmp.o string.o ctype.o vprintf.o rtc.o\
 		-o sh-stub.exe $(LIBGCC)
 	$(NM) -n sh-stub.exe > sh-stub.map
 

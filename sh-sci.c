@@ -98,6 +98,14 @@
 #define BPS_SETTING_VALUE	6 /* 6: 115200 bps */
 #elif defined(CONFIG_DREAMCAST)
 #define BPS_SETTING_VALUE	13 /* 13: 115200 bps */
+#elif defined(CONFIG_SESH4) && defined(CONFIG_CPU_SUBTYPE_SH_R)
+#define BPS_SETTING_VALUE	15
+                                  /* Using a 20.000 MHz clock */
+                                  /* 15: 115200 bps (1.7% off) */
+                                  /* 31:  57600 bps (1.7% off) */
+                                  /* 47:  38400 bps (1.7% off) */
+                                  /* 96:  19200 bps (.68% off) */
+                                  /* 194:  9600 bps (.16% off) */
 #elif defined(CONFIG_SESH4) && defined(CONFIG_CPU_SUBTYPE_SH7751)
 #define BPS_SETTING_VALUE	6 /* 6: 115200 bps */
 #else

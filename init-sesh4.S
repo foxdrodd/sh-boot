@@ -12,8 +12,13 @@
 #ifdef CONFIG_CPU_SUBTYPE_SH7751
 #define BCR2_D_VALUE	0x2FFC	   /* Area 1-6 width: 32/32/32/32/32/16 */
 #define WCR1_D_VALUE    0x02770771 /* DMA:0 A6:2 A3:0 A0:1 Others:15 */
-#define WCR2_D_VALUE    0x7FFE4FE7 /* A6:15 A6B:3 A5:15 A5B:7 A4:15
+#ifdef CONFIG_MRSHPC
+#define WCR2_D_VALUE    0xFFFE4FE7 /* A6:15 A6B:7 A5:15 A5B:7 A4:15
 				      A3:2  A2:15 A1:15 A0:6  A0B:7  */
+#else /* CONFIG_MRSHPC*/
+#define WCR2_D_VALUE    0x7FFE4FE7 /* A6:3  A6B:7 A5:15 A5B:7 A4:15
+				      A3:2  A2:15 A1:15 A0:6  A0B:7  */
+#endif /* CONFIG_MRSHPC */
 #define WCR3_D_VALUE	0x01777771 /* A6: 0-1 A5: 1-3 A4: 1-3 A3: 1-3
 				      A2: 1-3 A1: 1-3 A0: 0-1 */
 #define LED_ADDRESS	0xBA000000 /* Address of LED register */ 	
@@ -131,11 +136,15 @@ ENTRY(init_bsc)
 FRQCR_A:
 	.long	0xFFC00000	/* FRQCR Address */
 FRQCR_D:
+#ifdef CONFIG_CPU_SUBTYPE_SH_R
+	.long	0x00000e1a	/* 12:3:3 */
+#else
 #ifdef CONFIG_GOOD_SESH4
 	.long	0x00000e13	/* 6:2:1 */
 #else
 	.long	0x00000e23	/* 6:1:1 */
 #endif
+#endif	/* CONFIG_CPU_SUBTYPE_SH_R */
 BCR1_A:
 	.long	0xFF800000	/* BCR1 Address */
 BCR1_D:

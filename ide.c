@@ -1,4 +1,4 @@
-/* $Id: ide.c,v 1.16 2001/06/26 07:34:55 gniibe Exp $
+/* $Id: ide.c,v 1.2 2003/12/12 15:34:43 lethal Exp $
  *
  * sh-ipl+g/ide.c
  *
@@ -302,8 +302,10 @@ ide_reset (void)
 
   if (i == TIMEOUT)
     return -1;
-  else if (ide_inb (IDE_ERROR) != 1)
-    return -1;
+  else if (status & IDE_ERR){
+      if (ide_inb (IDE_ERROR) != 1)
+    	  return -1;
+  }
   return 0;
 }
 

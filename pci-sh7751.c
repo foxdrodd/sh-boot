@@ -20,17 +20,20 @@
 #define SH7751_MCR	(volatile unsigned long *)0xFF800014
 
 #define SH7751_PCICONF0	(volatile unsigned long *)0xFE200000
-  #define PCI_SH7751_ID	0x35051054
+#define PCI_SH7751_ID_MASK	(0x35051054 & 0x350e1054) /* SH7751: 0x35051054
+							     SH7751R:0x350e1054 */
 #define SH7751_PCICONF1	(volatile unsigned long *)0xFE200004
   #define SH7751_PCICONF1_WCC 0x00000080
   #define SH7751_PCICONF1_PER 0x00000040
   #define SH7751_PCICONF1_BUM 0x00000004
   #define SH7751_PCICONF1_MES 0x00000002
-  #define SH7751_PCICONF1_CMDS 0x000000C6
+  #define SH7751_PCICONF1_IOS 0x00000001
+  #define SH7751_PCICONF1_CMDS 0x000000C7
 #define SH7751_PCICONF2	(volatile unsigned long *)0xFE200008
   #define SH7751_PCI_HOST_BRIDGE 0x6
 #define SH7751_PCICONF3	(volatile unsigned long *)0xFE20000C
 #define SH7751_PCICONF4	(volatile unsigned long *)0xFE200010
+  #define SH7751_PCICONF4_IOBASE 0xab000001
 #define SH7751_PCICONF5	(volatile unsigned long *)0xFE200014
 #define SH7751_PCICONF6	(volatile unsigned long *)0xFE200018
 
@@ -59,7 +62,14 @@
 
 #define SH7751_PCI_MEM_BASE 0xFD000000
 #define SH7751_PCI_MEM_SIZE 0x01000000
+#if defined(CONFIG_CPU_SUBTYPE_SH_R)
+/* on SE7751R, SH7751_PCI_IO_BASE must be 0 otherwise Ether-chip doesn't work
+ * on SE7751, I don't know.
+ */
+#define SH7751_PCI_IO_BASE  0
+#else
 #define SH7751_PCI_IO_BASE  0xFE240000
+#endif
 #define SH7751_PCI_IO_SIZE  0x00040000
 
 #define SH7751_CS3_BASE_ADDR   0x0C000000
@@ -75,7 +85,7 @@ unsigned long pci_nextmem;
 int init_pcic(void)
 {
   /* Double-check that we're a 7751 chip */
-  if (p4_in(SH7751_PCICONF0) != PCI_SH7751_ID)
+  if ((p4_in(SH7751_PCICONF0) & PCI_SH7751_ID_MASK) != PCI_SH7751_ID_MASK)
     return 1;
 
   /* Double-check some BSC config settings */
@@ -101,6 +111,8 @@ int init_pcic(void)
 
   /* Define this host as the host bridge */
   p4_out(SH7751_PCICONF2, (SH7751_PCI_HOST_BRIDGE << 24));
+
+  p4_out(SH7751_PCICONF4, SH7751_PCICONF4_IOBASE);
 
   /* Force PCI clock(s) on */
   p4_out(SH7751_PCICLKR, SH7751_PCICLKR_PREFIX);

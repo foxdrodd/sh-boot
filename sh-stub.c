@@ -586,7 +586,11 @@ do {							\
 
 #elif defined(__SH4__)
 #define CCR		 0xff00001c
+#ifdef CONFIG_CPU_SUBTYPE_SH_R
+#define CCR_CACHE_INIT	 0x8000090d	/* EMODE,ICI,ICE(16k),OCI,P1-wb,OCE(32k) */
+#else
 #define CCR_CACHE_INIT	 0x0000090d	/* ICI,ICE(8k), OCI,P1-wb,OCE(16k) */
+#endif
 #define CCR_CACHE_STOP	 0x00000808
 #define CCR_CACHE_ENABLE 0x00000101
 #define CCR_CACHE_ICI	 0x00000800
@@ -596,10 +600,14 @@ do {							\
 #define CACHE_IC_ENTRY_MASK	0x1fe0
 
 #define CACHE_OC_ADDRESS_ARRAY	0xf4000000
-#define CACHE_OC_WAY_SHIFT       13
+#define CACHE_OC_WAY_SHIFT       14
 #define CACHE_OC_NUM_ENTRIES	512
 #define CACHE_OC_ENTRY_SHIFT      5
+#ifdef CONFIG_CPU_SUBTYPE_SH_R
+#define CACHE_OC_NUM_WAYS	  2
+#else
 #define CACHE_OC_NUM_WAYS	  1
+#endif
 
 /* Write back data caches, and invalidates instructiin caches */
 void flush_icache_range(unsigned long start, unsigned long end)

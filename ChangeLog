@@ -1,0 +1,214 @@
+2000-06-21  Greg Banks  <gnb@alphalink.com.au>
+
+	* sh-stub.c (ebin2mem): New function.
+	(gdb_handle_exception): Implement binary transfer.
+
+2000-06-21  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* *.mem: Move to machine/ directory.
+	config.h-*, config.mk-*: Move tu config/ directory.
+
+	* config/, machine/: New directories.
+
+	* Makefile: Added case of CONFIG_TEST.
+
+	* config.h-test, config.mk-test, test.mem: New files.
+
+	* sh-stub.lds.S: Add CONFIG_TEST.
+	Remove CONFIG_YAEGASHI.
+
+	* sh-stub.c (registers): Make it unsigned.
+	(doSStep): Bug fix for BT/S and BF/S.  We don't put trapa
+	at the slot.
+	Bug fix for BRAF/BSRF, branch position is different place.
+
+2000-06-19  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.c (gdb_handle_exception): Make trapa_value as argument.
+	(ctrl_inl): Added.
+	(handle_exception): Handle TRA value and BIOS call.
+	(handle_bios_call): New function.
+	(BIOS_CALL_TRAP): New Define.
+	(GDBCOOKIE): Removed.
+
+2000-05-28  YAEGASHI Takeshi  <yaegashi@ma.kcom.ne.jp>
+
+	* Makefile, sh-stub.lds.S: Add CONFIG_HP600, remove CONFIG_YAEGASHI
+
+	* sh-sci.c: addd #define of SCPDR, BPS_SETTING_VALUE
+
+	* init-hp600.S, config.h-hp600, config.mk-hp600, hp600.mem: New
+	files, add HP Jornada 600 support.
+
+2000-05-22  Yutarou Ebihara <ebiharaml@si-linux.com>
+
+	* cqsh3.c: New File.
+
+2000-05-22  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.lds.S (.stab, .comment, .stabstr): Define them so that
+	it doesn't placed .text section.
+	Bug reported by Toru Kijima <kijima@toyocom.co.jp> and
+	Yutarou Ebihara <ebiharaml@si-linux.com>.
+
+2000-05-18  KOMORIYA Takeru  <komoriya@robotics.is.tohoku.ac.jp>
+
+	* init-apsh4.S, config.h-apsh4, config.mk-apsh4, apsh4.mem: New
+	Files.
+
+	* Makefile: Added APSH4 support.
+
+	* sh-stub.lds.S: Added CONFIG_APSH4.
+
+	* sh-sci.c: Added baudrate setting(BPS_SETTING_VALUE) for APSH4
+
+	* entry.S (VBR_INIT): Assume .text is vector base address.
+
+2000-05-09  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* init-sesh4.S (FRQCR_A, FRQCR_D): Set FRQCR, as it may
+	unstable because of SCIF.
+	(RTCOR_D): Change the value for 66MHz.
+
+2000-05-06  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-sci.c (init_serial): Don't use hardware flow control.
+	(Since CqREEK SH-4 doesn't support this.  To support this, we need
+	connect CTS2 jumper with soldering iron).
+
+	* init-sesh3.S (WCR1_D, WCR2_D): More waits for Area 4.
+
+2000-05-05  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* init-sesh3.S (MCR_D): Fix the value (was: 0x00AC).
+
+2000-05-01  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-sci.c (init_serial): Move SCFCR setting after the wait.
+	(init_serial): Set SCPCR.
+	(SCPCR): New macro.
+
+	* sh-stub.lds.S: Added CONFIG_SESH3 and  CONFIG_SESH4.
+
+	* Makefile (MACHINE_DEPENDS): Add CONFIG_SESH3.
+
+	* init-sesh3.S, config.h-sesh3, config.mk-sesh3, sesh3.mem: New
+	files.
+
+	* entry.S (CCR_CACHE_DISABLE): New macro.
+	(start): Make sure cache is disabled before setting BSC.
+
+	* init-sesh4.S: Follow the way of SolutionEngine Monitor does.
+
+2000-04-05  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-sci.c (SCSCR_INIT): Introduced for SCIF support.
+
+	* Makefile: Added SESH4 support.
+	* config.mk-sesh4, config.h-sesh4, sesh4.mem, init-sesh4.S: New
+	files.
+
+2000-03-04  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-sci.c: Rename from sh-scif.c.
+
+	* init-cqsh4.S: Dump registers to memory (for reset debug).
+
+	* entry.S (start): Remove initialization of $fpscr.
+	When we don't use FPU, it doesn't matter.
+
+2000-02-27  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* linkage.h: Prefix "_" removed for new environment.
+	* sh-stub.lds.S: Ditto.
+	* Makefile (LINKFLAGS): Ditto.
+	(CROSS_COMPILE): Use "sh-linux-gnu-" instead of "sh-elf".
+
+	* config.h-cqsh4: Define CONFIG_LITTLE_ENDIAN.
+
+2000-02-05  John Hassey <hassey@gte.net>
+
+	* sh-stub.c (putpacket): Bug fix.  Handle the case where
+	runlen == 99.  (Was reported 11 Dec, 1999.)
+
+1999-11-28  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* init-cqsh3.S: Add PCMCIA support.
+
+1999-11-17  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-scif.c (SCI_ERROR_CLEAR): Bug fix for the value.
+	* sh-scif.c (SCSMR): Bug fix. SMR register should be accessed as
+	byte on SH-3.
+
+1999-11-11  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-scif.c (SCBRR): Bug fix. BRR register should be accessed
+	as byte.
+
+1999-10-09  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-scif.c (SC_SR): Byte access for SCI on SH-3.
+
+1999-10-07  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* cqsh3.mem: New file.
+
+	* sh-scif.c: Merge SCI implementation into one.
+
+	* io.h (p4_in, p4_out): New macros.
+
+1999-10-05  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* init-cqsh3.S: New file.
+
+	* sh-scif.c: Change serial registername not including "2".
+	(init_serial): Removed interrupt setting.
+
+	* sh-stub.c (gdb_handle_exception): See if trap number == 0xff.
+
+1999-10-02  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* entry.S (exception_handling_table): Fixed.
+
+1999-09-26  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.c (SSTEP_INSTR): Change from 0xc3ff.
+
+1999-09-24  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.c (flush_icache_range): Implemented.  Needed for SH-4.
+
+1999-09-23  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* entry.S (start): Initialize FPSCR on SH-4.
+	Don't include config.h, use compiler definition (__sh3__/__SH4__)
+	instead.
+
+	* sh-scif.c: Renamed frm sh4-scif.c, since this code can be shared
+	between SH-3 and SH-4.
+
+1999-09-19  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh4-scif.c: Set IPRC.
+	* entry.S (do_timer): Handle timer interrupt (just ignore).
+
+1999-09-18  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* entry.S (interrupt): Add missing align to 0x600.
+
+	* sh-stub.c (COND_BR_MASK): Changed so that we can handle BT/S and
+	BF/S instruction.
+	(UCOND_RBR_MASK): Changed for BSRF/BRAF instruction.
+	(SSTEP_INSTR): Change trap number to 0xFF (was 0x00).
+	(breakpoint): Likewise.
+
+1999-09-15  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* sh-stub.lds.S: Support little endian.
+
+1999-09-14  NIIBE Yutaka  <gniibe@m17n.org>
+
+	* Makefile, cqsh4.mem, entry.S, init-cqsh4.S, io.h, linkage.h,
+	setjmp.S, setjmp.h, sh-stub.c, sh-stub.lds.S, sh4-scif.c,
+	string.c, string.h: Initial Revision.

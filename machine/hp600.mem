@@ -1,0 +1,6 @@
+MEMORY
+{
+	ROM (rx):   ORIGIN = 0xacff0000, LENGTH = 64k
+	RAM (rw):   ORIGIN = 0xac000000, LENGTH = 2560
+	STACK (rw): ORIGIN = 0xac000a00, LENGTH = 1536
+}

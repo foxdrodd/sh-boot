@@ -1,0 +1,33 @@
+This is the GDB stub program for SuperH.  You can use this tiny
+program in the ROM of your target evaluation board.  This program may
+be distributed under GNU Lesser GPL.
+
+Please see the chapter "The GDB remote serial protocol" of GDB Manual.
+
+For the development environment, please look at:
+
+	http://www.m17n.org/linux-sh/dist/HOWTO
+
+					Niibe Yutaka  <gniibe@m17n.org>
+					1999-10-08
+
+Thanks to:
+	Takeshi Yaegashi
+		for the initial implementation for SH-3
+		and many technical information.
+		HP600 support.
+
+	Maki Murakami of CQ Publishing
+		for initialization code of CqREEK SH-4.
+
+	Mikhail Sogrine <sogrine@Informatik.Uni-Tuebingen.De>
+		for SH-3 support.
+
+	KOMORIYA Takeru
+		for APSH4 support.
+
+	Yutarou Ebihara
+		for cqsh3 rom image building program.
+
+	Greg Banks
+		for GDB protocol binary transfer.

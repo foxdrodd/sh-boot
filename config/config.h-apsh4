@@ -1,0 +1,3 @@
+#undef  CONFIG_LITTLE_ENDIAN
+#define CONFIG_APSH4		1
+#define CONFIG_SCIF		1

@@ -1,0 +1,396 @@
+/* $Id: entry.S,v 1.20 2000-05-25 15:55:15+09 gniibe Exp $
+ *
+ * gdb-sh-stub/entry.S
+ *
+ * Some code was taken from sh-stub.c of GDB 4.18.
+ *
+ *  Copyright (C) 1999, 2000  Niibe Yutaka
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License.  See the file "COPYING.LIB" in the main
+ * directory of this archive for more details.
+ *
+ */
+
+#include "linkage.h"
+
+#if defined(__sh3__)
+TRA      = 0xffffffd0
+EXPEVT   = 0xffffffd4
+INTEVT   = 0xffffffd8
+TMU0_TCR = 0xfffffe9c
+#define CCR			0xffffffec	/* Cache Control Register */
+#define CCR_CACHE_DISABLE	0x008		/* Flush the cache, disable */
+#define CCR_CACHE_INIT		0x0		/* disable */
+#elif defined(__SH4__)
+TRA      = 0xff000020
+EXPEVT   = 0xff000024
+INTEVT   = 0xff000028
+TMU0_TCR = 0xffd80010
+#define CCR			0xFF00001C	/* Cache Control Register */
+#define CCR_CACHE_DISABLE	0x0808		/* Flush the cache, disable */
+#define CCR_CACHE_INIT		0x0		/* disable */
+#endif
+
+	.text
+	.balign 	4096,0,4096
+
+ENTRY(start)
+	/* Disable cache */
+	mov.l	CCR_A,r1	/* CCR Address */
+	mov.l	CCR_DISABLE,r0	/* CCR Data */
+	mov.l	r0,@r1
+
+	/* Initialize BSC */
+	mov.l	1f,r0
+	jsr	@r0
+	 nop
+
+	/* Initialize cache */
+	mov.l	CCR_A,r1	/* CCR Address */
+	mov.l	CCR_D,r0	/* CCR Data */
+	mov.l	r0,@r1
+
+	/* Initialize VBR */
+	mov.l	VBR_INIT,r0
+	ldc	r0,vbr
+
+	/* SR: MD=1, BL=0, RB=0 */
+	mov.l	INITIAL_SR,r0
+	ldc	r0,sr
+
+	mov.l	INITIAL_STACK,r0
+	mov	r0,r15
+
+	/* Initialize Serial Port */
+	mov.l	2f,r0
+	jsr	@r0
+	 nop
+
+	/* Initialize BSS */
+	mov.l	4f,r1
+	add	#4,r1
+	mov.l	5f,r2
+	mov	#0,r0
+9:	cmp/hs	r2,r1
+	bf/s	9b		! while (r1 < r2)
+	 mov.l	r0,@-r2
+
+	/* Jump to GDB Stub */
+	mov.l	3f,r0
+	jmp	@r0
+	 nop
+
+	.balign	4
+1:	.long	SYMBOL_NAME(init_bsc)
+2:	.long	SYMBOL_NAME(init_serial)
+3:	.long	SYMBOL_NAME(start_gdbstub)
+4:	.long	SYMBOL_NAME(__bss_start)
+5:	.long	SYMBOL_NAME(__bss_end)
+CCR_A:	.long	CCR
+CCR_DISABLE:
+	.long	CCR_CACHE_DISABLE
+CCR_D:	.long	CCR_CACHE_INIT
+INITIAL_SR:
+	.long	0x40000000	/* MD=1, RD=0, BL=0 */
+INITIAL_STACK:
+	.long	SYMBOL_NAME(stub_stack)
+VBR_INIT:
+	.long	SYMBOL_NAME(.text)
+
+!
+!
+	.balign 	256,0,256
+general_exception:
+	mov.l	1f,r2
+	bra	do_exception
+	 mov.l	@r2,r2
+	.balign	4
+1:	.long	EXPEVT
+!
+!
+	.balign 	1024,0,1024
+tlb_miss:
+	mov.l	1f,r2
+	bra	do_exception
+	 mov.l	@r2,r2
+!
+	.balign 	512,0,512
+interrupt:
+	mov.l	2f,r2
+	bra	do_exception
+	 mov.l	@r2,r2
+	.balign	4
+1:	.long	EXPEVT
+2:	.long	INTEVT
+
+!
+!
+do_exception:
+	shlr2	r2
+	shlr2	r2
+	shlr	r2
+	mov.l	2f,r0
+	stc	sr,r1		! back to normal register bank
+	and	r0,r1		! ..
+	ldc	r1,sr		! ...changed here.
+	! Then, dispatch to the handler, according to the excepiton code.
+	ldc	r0,r0_bank
+	ldc	r1,r1_bank
+	stc	r2_bank,r1	! exception vector code
+	shll2	r1
+	mov.l	1f,r0
+	add	r1,r0
+	stc	r1_bank,r1
+	mov.l	@r0,r0
+	jmp	@r0
+	 stc	r0_bank,r0	! recovering r0..
+	.balign	4
+1:	.long	exception_handling_table
+2:	.long	0xdfffffff	! RB=0
+
+exception_handling_table:
+	.long	0
+	.long	0
+	.long	0 ! tlb_miss_load
+	.long	0 ! tlb_miss_store
+	.long	0 ! initial_page_write
+	.long	0 ! tlb_protection_violation_load
+	.long	0 ! tlb_protection_violation_store
+	.long	address_error_load
+	.long	address_error_store
+	.long	0
+	.long	0
+	.long	unconditional_trap
+	.long	reserved_instruction
+	.long	illegal_slot_instruction
+	.long	nmi
+	.long	user_break
+ENTRY(interrupt_table)
+	! external hardware
+	.long	do_IRQ	! 0000
+	.long	do_IRQ	! 0001
+	.long	do_IRQ	! 0010
+	.long	do_IRQ	! 0011
+	.long	do_IRQ	! 0100
+	.long	do_IRQ	! 0101
+	.long	do_IRQ	! 0110
+	.long	do_IRQ	! 0111
+	.long	do_IRQ	! 1000
+	.long	do_IRQ	! 1001
+	.long	do_IRQ	! 1010
+	.long	do_IRQ	! 1011
+	.long	do_IRQ	! 1100
+	.long	do_IRQ	! 1101
+	.long	do_IRQ	! 1110
+	.long	0
+	! Internal hardware
+	.long	do_timer	! TMU0 tuni0
+	.long	do_IRQ		! TMU1 tuni1
+	.long	do_IRQ		! TMU2 tuni2
+	.long	do_IRQ		!      ticpi2
+	.long	do_IRQ		! RTC  ati
+	.long	do_IRQ		!      pri
+	.long	do_IRQ		!      cui
+	.long	do_IRQ		! SCI  eri
+	.long	do_IRQ		!      rxi
+	.long	do_IRQ		!      txi
+	.long	do_IRQ		!      tei
+	.long	do_IRQ		! WDT  iti
+	.long	do_IRQ		! REF  rcmi
+	.long	do_IRQ		!      rovi
+	.long	do_IRQ
+	.long	do_IRQ
+	.long	do_IRQ		! Hitachi UDI
+	.long	do_IRQ
+	.long	do_IRQ		! DMAC dmte0
+	.long	do_IRQ		!      dmte1
+	.long	do_IRQ		!      dmte2
+	.long	do_IRQ		!      dmte3
+	.long	do_IRQ		!      dmae
+	.long	do_IRQ
+	.long	do_IRQ		! SCIF eri
+	.long	do_IRQ		!      rxi
+	.long	break		!      bri
+	.long	do_IRQ		!      txi
+
+saveRegisters:
+	mov.l	L_reg, r0
+	mov.l	@r15+, r1			! pop R0
+	mov.l	r2, @(0x08, r0)			! save R2
+	mov.l	r1, @r0				! save R0
+	mov.l	@r15+, r1			! pop R1
+	mov.l	r3, @(0x0c, r0)			! save R3
+	mov.l	r1, @(0x04, r0)			! save R1
+	mov.l	r4, @(0x10, r0)			! save R4
+	mov.l	r5, @(0x14, r0)			! save R5
+	mov.l	r6, @(0x18, r0)			! save R6
+	mov.l	r7, @(0x1c, r0)			! save R7
+	mov.l	r8, @(0x20, r0)			! save R8
+	mov.l	r9, @(0x24, r0)			! save R9
+	mov.l	r10, @(0x28, r0)		! save R10
+	mov.l	r11, @(0x2c, r0)		! save R11
+	mov.l	r12, @(0x30, r0)		! save R12
+	mov.l	r13, @(0x34, r0)		! save R13
+	mov.l	r14, @(0x38, r0)		! save R14
+	mov.l	@r15+, r4			! save arg to handleException
+	mov.l	r15, @(0x3c, r0)		! save R15
+	add	#92, r0				! readjust register pointer
+	mov	r15, r2
+	add	#4, r2
+	stc	ssr, r2				! R2 has SR
+	stc	spc, r1				! R1 has PC
+	mov.l	r2, @-r0			! save SR
+	sts.l	macl, @-r0			! save MACL
+	sts.l	mach, @-r0			! save MACH
+	stc.l	vbr, @-r0			! save VBR
+	stc.l	gbr, @-r0			! save GBR
+	sts.l	pr, @-r0			! save PR
+	mov.l	L_stubstack, r2
+	mov.l	L_hdl_except, r3
+	mov.l	@r2, r15
+	jsr	@r3
+	 mov.l	r1, @-r0			! save PC
+	mov.l	L_stubstack, r0
+	mov.l	L_reg, r1
+	bra	restoreRegisters
+	 mov.l	r15, @r0			! save __stub_stack
+
+	.balign	4
+L_reg:
+	.long	SYMBOL_NAME(registers)
+L_stubstack:
+	.long	SYMBOL_NAME(stub_sp)
+L_hdl_except:
+	.long	SYMBOL_NAME(handle_exception)
+
+restoreRegisters:
+	add	#8, r1				! skip to R2
+	mov.l	@r1+, r2			! restore R2
+	mov.l	@r1+, r3			! restore R3
+	mov.l	@r1+, r4			! restore R4
+	mov.l	@r1+, r5			! restore R5
+	mov.l	@r1+, r6			! restore R6
+	mov.l	@r1+, r7			! restore R7
+	mov.l	@r1+, r8			! restore R8
+	mov.l	@r1+, r9			! restore R9
+	mov.l	@r1+, r10			! restore R10
+	mov.l	@r1+, r11			! restore R11
+	mov.l	@r1+, r12			! restore R12
+	mov.l	@r1+, r13			! restore R13
+	mov.l	@r1+, r14			! restore R14
+	mov.l	@r1+, r15			! restore programs stack
+	mov.l	@r1+, r0
+	ldc	r0, spc				! restore PC
+	lds.l	@r1+, pr			! restore PR
+	ldc.l	@r1+, gbr			! restore GBR		
+	ldc.l	@r1+, vbr			! restore VBR
+	lds.l	@r1+, mach			! restore MACH
+	lds.l	@r1+, macl			! restore MACL
+	mov.l	@r1, r0	
+	add	#-88, r1			! readjust reg pointer to R1
+	ldc	r0, ssr				! restore SR
+	mov.l	r2, @-r15
+	mov.l	L_in_nmi, r0
+	mov	#0, r2
+	mov.b	r2, @r0
+	mov.l	@r15+, r2
+	mov.l	@r1+, r0			! restore R0
+	rte
+	 mov.l	@r1, r1				! restore R1
+
+address_error_load:
+address_error_store:
+	add	#-4,r15			! reserve spot on stack
+	mov.l	r1,@-r15		! push R1
+	  /* Exception 9 (bus errors) are disasbleable - so that you
+	     can probe memory and get zero instead of a fault.
+	     Because the vector table may be in ROM we don't revector
+	     the interrupt like all the other stubs, we check in here
+	     */
+	mov.l	L_dofault,r1
+	mov.l	@r1,r1
+	tst	r1,r1
+	bf	1f
+	mov.l	L_handle_buserror,r0
+	jmp	@r0
+	 nop
+	.balign	4
+L_dofault:
+	.long 	SYMBOL_NAME(dofault)
+L_handle_buserror:
+	.long	SYMBOL_NAME(handle_buserror)
+
+break:
+	add	#-4,r15			! reserve spot on stack
+	mov.l	r1,@-r15		! push R1
+	mov.l	r0,@-r15		! push R0
+	mov.l	r2,@-r15		! push R2
+	mov.l	1f,r0
+	jsr	@r0
+	 mov.l	r3,@-r15		! push R3
+	mov.l	@r15+,r3		! pop R3
+	bra	2f
+	 mov.l	@r15+,r3		! pop R2
+
+	.balign	4
+1:	.long	SYMBOL_NAME(handleError)
+
+unconditional_trap:
+reserved_instruction:
+illegal_slot_instruction:
+user_break:
+	add	#-4,r15			! reserve spot on stack
+	mov.l	r1,@-r15		! push R1
+
+1:	mov.l	r0,@-r15		! push R0
+	/* Prepare for saving context, we've already pushed r0 and r1, stick
+	   exception number into the frame */
+2:	mov.l	3f,r0
+	stc	sr,r1
+	and	r0,r1
+	ldc	r1,sr			! sti (enable interrupt)
+	mov	r15,r0
+	add	#8,r0
+	stc	r2_bank,r1
+	bra	saveRegisters		! save register values
+	 mov.l	r1,@r0			! save exception #
+
+	.balign	4
+3:	.long	0xefffffff	! BL=0
+
+nmi:
+	add	#-4,r15			! reserve spot on stack
+	mov.l	r1,@-r15		! push R1
+	/* Special case for NMI - make sure that they don't nest */
+	mov.l	r0,@-r15		! push R0
+	mov.l	L_in_nmi,r0
+	tas.b	@r0			! Fend off against addtnl NMIs
+	bt	2b
+	mov.l	@r15+,r0
+	mov.l	@r15+,r1
+	add	#4, r15
+	rte
+	 nop
+
+	.balign	4
+L_in_nmi:
+	.long	SYMBOL_NAME(in_nmi)
+
+do_IRQ:
+	rte
+	 nop
+
+do_timer:			/* Clear flag */
+	mov.l	1f,r0
+	mov.w	@r0,r1
+	mov.w	2f,r2
+	and	r2,r1
+	mov.w	r1,@r0
+	rte
+	 nop
+	.balign	4
+1:	.long	TMU0_TCR
+2:	.word	0xfeff
+
+/* End of entry.S */

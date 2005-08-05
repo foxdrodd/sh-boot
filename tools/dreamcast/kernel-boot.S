@@ -1,5 +1,5 @@
 /*
- *	$Id: kernel-boot.S,v 1.3 2005/08/05 00:31:34 lethal Exp $
+ *	$Id: kernel-boot.S,v 1.4 2005/08/05 02:27:46 lethal Exp $
  *	Copyright (C) 2000 YAEGASHI Takeshi <yaegashi@ma.kcom.ne.jp>
  */
 	
@@ -17,6 +17,7 @@ copy_loop1:
 	bf.s	copy_loop1
 	 add	#1,r4
 
+#ifdef HAVE_INITRD
 	mov.l	L_binary_initrd_bin_start,r2
 	mov.l	L_binary_initrd_bin_end,r3
 	mov.l	L_binary_initrd_bin_dest,r4
@@ -26,6 +27,7 @@ copy_loop2:
 	cmp/hs	r3,r2
 	bf.s	copy_loop2
 	 add	#1,r4
+#endif
 
 	mov	#0,r0
 	mov.l	L_STBCR,r1
@@ -63,12 +65,14 @@ L_binary_zImage_bin_end:
 	.long	_binary_zImage_bin_end
 L_binary_zImage_bin_dest:
 	.long	0xac210000
+#ifdef HAVE_INITRD
 L_binary_initrd_bin_start:
 	.long	_binary_initrd_bin_start
 L_binary_initrd_bin_end:
 	.long	_binary_initrd_bin_end
 L_binary_initrd_bin_dest:
 	.long	0xac800000
+#endif
 L_entry:
 	.long	0x8c210000
 L_STBCR:
@@ -78,8 +82,14 @@ bootparams:
 	.long	0x8c001004, 0		! RAMDISK_FLAGS
 	.long	0x8c001008, 0x0100	! ORIG_ROOT_DEV
 	.long	0x8c00100c, 0		! LOADER_TYPE
+#ifdef HAVE_INITRD
 	.long	0x8c001010, 0x00800000	! INITRD_START
 	.long	0x8c001014, 0x00400000	! INITRD_SIZE
+#else
+	.long	0x8c001010, 0
+	.long	0x8c001014, 0
+#endif
+
 	.long	0, 0	
 L_COMMANDLINE_DEST:
 	.long	0x8c001100

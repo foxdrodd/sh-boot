@@ -22,10 +22,14 @@ tree.  It will load sh-stub.bin at 0xacff0000 and starts there.
 kernel-boot.S: booting Linux kernel with initrd.  You need following
 files to build.
 
-	zImage.bin: compressed kernel image, loaded at 0x8c710000
+	zImage.bin: compressed kernel image, loaded at 0x8c210000
 	initrd.bin: initrd image(probably gzipped), loaded at 0x8c800000
 
-After loading it sets boot parameters and starts from 0x8c710000.
+Note that the initrd is optional. By default it will not be compiled in,
+please uncomment INITRD_SUPPORT in the Makefile if you wish to have the
+initrd automatically linked in. It is advisable to use initramfs instead.
+
+After loading it sets boot parameters and starts from 0x8c210000.
 
 You can build these images individually like this:
 

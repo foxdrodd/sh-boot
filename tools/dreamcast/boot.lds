@@ -1,9 +1,9 @@
 /*
- *	$Id: boot.lds,v 1.2 2003/12/12 15:34:44 lethal Exp $
+ *	$Id: boot.lds,v 1.3 2005/08/05 01:25:20 lethal Exp $
  *	Copyright (C) 2000 YAEGASHI Takeshi <yaegashi@ma.kcom.ne.jp>
  */
 
-OUTPUT_FORMAT("elf32-shl", "elf32-shl", "elf32-shl")
+OUTPUT_FORMAT("elf32-sh-linux", "elf32-sh-linux", "elf32-sh-linux")
 OUTPUT_ARCH(sh)
 ENTRY(start)
 SECTIONS {

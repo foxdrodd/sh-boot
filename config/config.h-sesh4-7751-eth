@@ -1,9 +1,0 @@
-#include "config/config.h-sesh4-7751"
-
-#undef  CONFIG_IDE
-#define CONFIG_ETHERNET			1
-#define CONFIG_ETHER_ADDRESS_ARRAY	{0x02, 0x00, 0x00, 0x00, 0x00, 0x00}
-#define CONFIG_ETHER_CONFIG_WORD	0xB9000002
-
-#define CONFIG_PCI			1
-#define CONFIG_PCNET_MEMORY		0xac400000

@@ -26,7 +26,7 @@
 #define PP_DmaFrameCnt 0x0028	/*  ISA DMA Frame count */
 #define PP_DmaByteCnt 0x002A	/*  ISA DMA Byte count */
 #define PP_CS8900_ISAMemB 0x002C	/*  Memory base */
-#define PP_CS8920_ISAMemB 0x0348 /*  */
+#define PP_CS8920_ISAMemB 0x0348	/*  */
 
 #define PP_ISABootBase 0x0030	/*  Boot Prom base  */
 #define PP_ISABootMask 0x0034	/*  Boot Prom Mask */
@@ -76,7 +76,7 @@
 #define ADD_MASK 0x3000		/*  Mask it use of the ADD_PORT register */
 #define ADD_SIG 0x3000		/*  Expected ID signature */
 
-#define CHIP_EISA_ID_SIG 0x630E   /*  Product ID Code for Crystal Chip (CS8900 spec 4.3) */
+#define CHIP_EISA_ID_SIG 0x630E	/*  Product ID Code for Crystal Chip (CS8900 spec 4.3) */
 
 #ifdef	IBMEIPKT
 #define EISA_ID_SIG 0x4D24	/*  IBM */
@@ -88,7 +88,7 @@
 #define MONGOOSE_BIT 0x2000	/*  PART_NO_SIG + MONGOOSE_BUT => ID of mongoose */
 #endif
 
-#define PRODUCT_ID_ADD 0x0002   /*  Address of product ID */
+#define PRODUCT_ID_ADD 0x0002	/*  Address of product ID */
 
 /*  Mask to find out the types of  registers */
 #define REG_TYPE_MASK 0x001F
@@ -288,7 +288,7 @@
 #define ISQ_RX_MISS_EVENT 0x10
 #define ISQ_TX_COL_EVENT 0x12
 
-#define ISQ_EVENT_MASK 0x003F   /*  ISQ mask to find out type of event */
+#define ISQ_EVENT_MASK 0x003F	/*  ISQ mask to find out type of event */
 #define ISQ_HIST 16		/*  small history buffer */
 #define AUTOINCREMENT 0x8000	/*  Bit mask to set bit-15 for autoincrement */
 
@@ -298,10 +298,10 @@
 #define TXRX_LENGTH_MASK 0x07FF
 
 /*  rx options bits */
-#define RCV_WITH_RXON	1       /*  Set SerRx ON */
-#define RCV_COUNTS	2       /*  Use Framecnt1 */
-#define RCV_PONG	4       /*  Pong respondent */
-#define RCV_DONG	8       /*  Dong operation */
+#define RCV_WITH_RXON	1	/*  Set SerRx ON */
+#define RCV_COUNTS	2	/*  Use Framecnt1 */
+#define RCV_PONG	4	/*  Pong respondent */
+#define RCV_DONG	8	/*  Dong operation */
 #define RCV_POLLING	0x10	/*  Poll RxEvent */
 #define RCV_ISQ		0x20	/*  Use ISQ, int */
 #define RCV_AUTO_DMA	0x100	/*  Set AutoRxDMAE */
@@ -311,15 +311,15 @@
 #define RCV_IO		0x1000	/*  Use ISA IO only */
 #define RCV_MEMORY	0x2000	/*  Use ISA Memory */
 
-#define RAM_SIZE	0x1000       /*  The card has 4k bytes or RAM */
-#define PKT_START PP_TxFrame  /*  Start of packet RAM */
+#define RAM_SIZE	0x1000	/*  The card has 4k bytes or RAM */
+#define PKT_START PP_TxFrame	/*  Start of packet RAM */
 
 #define RX_FRAME_PORT	0x0000
 #define TX_FRAME_PORT RX_FRAME_PORT
 #define TX_CMD_PORT	0x0004
-#define TX_NOW		0x0000       /*  Tx packet after   5 bytes copied */
-#define TX_AFTER_381	0x0020       /*  Tx packet after 381 bytes copied */
-#define TX_AFTER_ALL	0x0060       /*  Tx packet after all bytes copied */
+#define TX_NOW		0x0000	/*  Tx packet after   5 bytes copied */
+#define TX_AFTER_381	0x0020	/*  Tx packet after 381 bytes copied */
+#define TX_AFTER_ALL	0x0060	/*  Tx packet after all bytes copied */
 #define TX_LEN_PORT	0x0006
 #define ISQ_PORT	0x0008
 #define ADD_PORT	0x000A
@@ -332,14 +332,14 @@
 
 /*  Receive Header */
 /*  Description of header of each packet in receive area of memory */
-#define RBUF_EVENT_LOW	0   /*  Low byte of RxEvent - status of received frame */
-#define RBUF_EVENT_HIGH	1   /*  High byte of RxEvent - status of received frame */
-#define RBUF_LEN_LOW	2   /*  Length of received data - low byte */
-#define RBUF_LEN_HI	3   /*  Length of received data - high byte */
-#define RBUF_HEAD_LEN	4   /*  Length of this header */
+#define RBUF_EVENT_LOW	0	/*  Low byte of RxEvent - status of received frame */
+#define RBUF_EVENT_HIGH	1	/*  High byte of RxEvent - status of received frame */
+#define RBUF_LEN_LOW	2	/*  Length of received data - low byte */
+#define RBUF_LEN_HI	3	/*  Length of received data - high byte */
+#define RBUF_HEAD_LEN	4	/*  Length of this header */
 
-#define CHIP_READ 0x1   /*  Used to mark state of the repins code (chip or dma) */
-#define DMA_READ 0x2   /*  Used to mark state of the repins code (chip or dma) */
+#define CHIP_READ 0x1		/*  Used to mark state of the repins code (chip or dma) */
+#define DMA_READ 0x2		/*  Used to mark state of the repins code (chip or dma) */
 
 /*  for bios scan */
 /*  */
@@ -356,8 +356,8 @@
 
 /*  Byte offsets into the EEPROM configuration buffer */
 #define ISA_CNF_OFFSET 0x6
-#define TX_CTL_OFFSET (ISA_CNF_OFFSET + 8)			/*  8900 eeprom */
-#define AUTO_NEG_CNF_OFFSET (ISA_CNF_OFFSET + 8)		/*  8920 eeprom */
+#define TX_CTL_OFFSET (ISA_CNF_OFFSET + 8)	/*  8900 eeprom */
+#define AUTO_NEG_CNF_OFFSET (ISA_CNF_OFFSET + 8)	/*  8920 eeprom */
 
   /*  the assumption here is that the bits in the eeprom are generally  */
   /*  in the same position as those in the autonegctl register. */
@@ -398,23 +398,23 @@
 #define ANY_ISA_DMA (ISA_AUTO_RxDMA | ISA_RxDMA)
 
 /*  DMA controller registers */
-#define DMA_BASE 0x00     /*  DMA controller base */
-#define DMA_BASE_2 0x0C0    /*  DMA controller base */
+#define DMA_BASE 0x00		/*  DMA controller base */
+#define DMA_BASE_2 0x0C0	/*  DMA controller base */
 
-#define DMA_STAT 0x0D0    /*  DMA controller status register */
-#define DMA_MASK 0x0D4    /*  DMA controller mask register */
-#define DMA_MODE 0x0D6    /*  DMA controller mode register */
-#define DMA_RESETFF 0x0D8    /*  DMA controller first/last flip flop */
+#define DMA_STAT 0x0D0		/*  DMA controller status register */
+#define DMA_MASK 0x0D4		/*  DMA controller mask register */
+#define DMA_MODE 0x0D6		/*  DMA controller mode register */
+#define DMA_RESETFF 0x0D8	/*  DMA controller first/last flip flop */
 
 /*  DMA data */
-#define DMA_DISABLE 0x04     /*  Disable channel n */
-#define DMA_ENABLE 0x00     /*  Enable channel n */
+#define DMA_DISABLE 0x04	/*  Disable channel n */
+#define DMA_ENABLE 0x00		/*  Enable channel n */
 /*  Demand transfers, incr. address, auto init, writes, ch. n */
 #define DMA_RX_MODE 0x14
 /*  Demand transfers, incr. address, auto init, reads, ch. n */
 #define DMA_TX_MODE 0x18
 
-#define DMA_SIZE (16*1024) /*  Size of dma buffer - 16k */
+#define DMA_SIZE (16*1024)	/*  Size of dma buffer - 16k */
 
 #define CS8900 0x0000
 #define CS8920 0x4000
@@ -423,13 +423,13 @@
 #define EEVER_NUMBER 0x12
 #define CHKSUM_LEN 0x14
 #define CHKSUM_VAL 0x0000
-#define START_EEPROM_DATA 0x001c /*  Offset into eeprom for start of data */
-#define IRQ_MAP_EEPROM_DATA 0x0046 /*  Offset into eeprom for the IRQ map */
-#define IRQ_MAP_LEN 0x0004 /*  No of bytes to read for the IRQ map */
-#define PNP_IRQ_FRMT 0x0022 /*  PNP small item IRQ format */
-#define CS8900_IRQ_MAP 0x1c20 /*  This IRQ map is fixed */
+#define START_EEPROM_DATA 0x001c	/*  Offset into eeprom for start of data */
+#define IRQ_MAP_EEPROM_DATA 0x0046	/*  Offset into eeprom for the IRQ map */
+#define IRQ_MAP_LEN 0x0004	/*  No of bytes to read for the IRQ map */
+#define PNP_IRQ_FRMT 0x0022	/*  PNP small item IRQ format */
+#define CS8900_IRQ_MAP 0x1c20	/*  This IRQ map is fixed */
 
-#define CS8920_NO_INTS 0x0F   /*  Max CS8920 interrupt select # */
+#define CS8920_NO_INTS 0x0F	/*  Max CS8920 interrupt select # */
 
 #define PNP_ADD_PORT 0x0279
 #define PNP_WRITE_PORT 0x0A79
@@ -458,4 +458,3 @@
  *  c-basic-offset: 8
  * End:
  */
-

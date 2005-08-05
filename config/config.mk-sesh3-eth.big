@@ -1,4 +1,9 @@
-# CONFIG_LITTLE_ENDIAN is not set
 CONFIG_CPU_SH3=y
 CONFIG_SESH3=y
 CONFIG_ETHERNET=y
+CONFIG_STNIC=y
+CONFIG_ADJUST_VMA=0x0
+### automatically imported from "config.h" file
+include config/config.mk-sesh3-eth
+
+CONFIG_LITTLE_ENDIAN=n

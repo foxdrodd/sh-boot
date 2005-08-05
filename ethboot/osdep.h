@@ -13,28 +13,24 @@
 #define htonl(x) (x)
 #define ntohs(x) (x)
 #define htons(x) (x)
-#else /* must be LITTLE_ENDIAN */
+#else				/* must be LITTLE_ENDIAN */
 #define ntohl(x) swab32(x)
 #define htonl(x) swab32(x)
 #define ntohs(x) swab16(x)
 #define htons(x) swab16(x)
-#endif /* LITTLE_ENDIAN */
+#endif				/* LITTLE_ENDIAN */
 
 static __inline__ __const__ unsigned long int swab32(unsigned long int x)
 {
-	__asm__("swap.b	%0, %0\n\t"
-		"swap.w %0, %0\n\t"
-		"swap.b %0, %0"
-		: "=r" (x)
-		: "0" (x));
+      __asm__("swap.b	%0, %0\n\t" "swap.w %0, %0\n\t" "swap.b %0, %0":"=r"(x)
+      :	"0"(x));
 	return x;
 }
 
 static __inline__ __const__ unsigned short int swab16(unsigned short int x)
 {
-	__asm__("swap.b %0, %0"
-		: "=r" (x)
-		:  "0" (x));
+      __asm__("swap.b %0, %0":"=r"(x)
+      :	"0"(x));
 	return x;
 }
 

@@ -1,5 +1,10 @@
-# CONFIG_LITTLE_ENDIAN is not set
 CONFIG_CPU_SH4=y
 CONFIG_SESH4=y
 CONFIG_IDE=y
 CONFIG_ETHERNET=y
+CONFIG_STNIC=y
+CONFIG_ADJUST_VMA=0x0
+### automatically imported from "config.h" file
+include config/config.mk-sesh4-ide-eth
+
+CONFIG_LITTLE_ENDIAN=n

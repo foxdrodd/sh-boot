@@ -3,93 +3,110 @@
 # gdb-sh-stub/Makefile
 #
 
-.S.o:
-	$(CC) -D__ASSEMBLY__ $(AFLAGS) -traditional -c -o $*.o $<
+TOPDIR =$(CURDIR)
 
 include config.mk
+include Rules.mak
 
-CROSS_COMPILE= sh-linux-
-
-CC	=$(CROSS_COMPILE)gcc -I.
-LD	=$(CROSS_COMPILE)ld
-OBJCOPY =$(CROSS_COMPILE)objcopy
-NM	=$(CROSS_COMPILE)nm
-
-CFLAGS = -Os -Wall -fno-hosted -fomit-frame-pointer
-
-# derived from $(TOPDIR)/Makefile
-cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
-             > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
-
-cflags-y				:= -mb
-cflags-$(CONFIG_LITTLE_ENDIAN)	        := -ml
-
-cflags-$(CONFIG_CPU_SH3)		+= -m3
-cflags-$(CONFIG_CPU_SH4)		+= -m4 \
-	$(call cc-option,-mno-implicit-fp,-m4-nofpu)
-
-CFLAGS		+= -pipe $(cflags-y)
-AFLAGS		+= $(cflags-y)
-
-ifdef CONFIG_LITTLE_ENDIAN
-LDFLAGS		:= -EL
-else
-LDFLAGS		:= -EB
-endif
-
-export CROSS_COMPILE CC LD OBJCOPY NM CFLAGS AFLAGS LDFLAGS
-
+export TOPDIR CROSS_COMPILE CC LD OBJCOPY NM CFLAGS AFLAGS LDFLAGS
 
 LINKSCRIPT       = sh-stub.lds
 LINKFLAGS	+= -T $(word 1,$(LINKSCRIPT)) -e start $(LDFLAGS)
 LIBGCC           = $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-ifdef CONFIG_TEST4
-MACHINE_DEPENDS :=	init-cqsh4.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	ns8390.o
+common-y := entry.o main.o sh-stub.o sh-sci.o setjmp.o string.o ctype.o vprintf.o rtc.o
+
+# machine dependent files
+mdep-$(CONFIG_ARN44)            :=      init-arn44.o cs89x0.o
+mdep-$(CONFIG_CQSH4)		:=	init-cqsh4.o
+mdep-$(CONFIG_CQSH3)		:=	init-cqsh3.o
+mdep-$(CONFIG_CAT68701)		:=	init-cat68701.o cat68701.o 
+mdep-$(CONFIG_SE09)		:=	init-se09.o
+mdep-$(CONFIG_SESH3)		:=	init-sesh3.o
+mdep-$(CONFIG_SESHMV)		:=	init-seshmv.o
+mdep-$(CONFIG_SESH4)		:=	init-sesh4.o
+mdep-$(CONFIG_SESHM3)		:=	init-seshm3.o
+mdep-$(CONFIG_APSH4)		:=	init-apsh4.o
+mdep-$(CONFIG_HP600)		:=	init-hp600.o
+mdep-$(CONFIG_DREAMCAST)	:=	init-dreamcast.o
+mdep-$(CONFIG_7750OVERDRIVE)	:=	init-od7750.o
+mdep-$(CONFIG_STB1OVERDRIVE)	:=	init-odstb1.o
+mdep-$(CONFIG_ADX)		:=	init-adx.o
+
+ifdef CONFIG_PCI
+mdep-$(CONFIG_CPU_SUBTYPE_SH7751) +=	pci-sh7751.o
 endif
 
-# 0x00000000(address for ROM image)-0xa0000000(final destination) = 0x60000000
-ADJUST_VMA=0x60000000
-endif
-ifdef CONFIG_CQSH4
-MACHINE_DEPENDS :=	init-cqsh4.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	ns8390.o
+mdep-$(CONFIG_IDE)      	+= 	ide.o
+
+# ethernet controller
+mdep-$(CONFIG_NE2000)		+=	ns8390.o
+mdep-$(CONFIG_STNIC)		+=	ns8390.o
+mdep-$(CONFIG_SMC9000)		+=	smc9000.o
+mdep-$(CONFIG_PCNET32)		+=	pcnet32.o
+mdep-$(CONFIG_CS89X0)		+=	cs89x0.o
+
+ifdef CONFIG_CPU_SH2
+mdep-y                          +=      exceptions-sh2.o
+else
+mdep-y                          +=      exceptions-sh3.o
 endif
 
-# 0x88002000(address for flash prog)-0xa0000000(final destination) = 0xe8002000
-# 0xA8100000(address for flash prog)-0xa0000000(final destination) = 0x08100000
-ADJUST_VMA=0x08100000
+# Provided for further sub directories to be added.
+subdir-$(CONFIG_ETHERNET) 	+= ethboot/
 
-sh-stub.srec: sh-stub.exe
+obj-y 				:= $(common-y) $(mdep-y)
+all-y				:= $(obj-y) $(patsubst %/, %/built-in.o, $(subdir-y))
+
+# get symbol address from ELF image
+symbol-address = $(shell $(NM) $(2) | grep $(1) | cut -d' ' -f1)
+
+.PHONY: all
+all: sh-stub.srec
+
+sh-stub.srec: sh-stub.elf
+	$(OBJCOPY) -O srec --adjust-vma=${CONFIG_ADJUST_VMA} \
+		$< $@
+
+sh-stub.bin: sh-stub.elf
+	$(OBJCOPY) -O binary $< $@
+
+sh-stub.elf: sh-stub.exe
+	$(OBJCOPY) -S -R .stack -R .bss -R .comment  \
+		--change-section-lma=.data=0x$(call symbol-address,_etext,$<) \
+		$< $@
+
+sh-stub.hex: sh-stub.exe
 	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		--adjust-vma=${ADJUST_VMA} \
-		-O srec sh-stub.exe sh-stub.srec
-endif
-ifdef CONFIG_TEST
-MACHINE_DEPENDS :=	init-cqsh3.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	ns8390.o
-endif
+		--adjust-vma=${CONFIG_ADJUST_VMA} -O ihex \
+		$< $@
 
-# 0x00000000(address for ROM image)-0xa0000000(final destination) = 0x60000000
-ADJUST_VMA=0x60000000
-endif
+sh-stub.exe: $(all-y) sh-stub.lds
+	$(LD) $(LINKFLAGS) $(all-y) -o $@ $(LIBGCC)
+	$(NM) -n $@ > $(subst exe,map, $@)
+
+sh-stub.lds: sh-stub.lds.S
+	$(CC) -D__ASSEMBLY__ -traditional -E -C -P -I. $< > $@
+
+
+.PHONY: config
+config: config.h
+config.h: config.mk
+	@tools/mkconfigh.pl $^ > $@
+
+.PHONY: clean
+clean:
+	@find . \( -name '*.[oas]' -o -name '*~' -o -name '*.exe' \
+		-o -name '*.elf' -o -name '*.map' -o -name '.*.P' \) \
+		-type f -print | xargs rm -f
+	@$(RM) *.srec *.hex sh-stub.lds config.h
+
+.PHONY: mrproper
+mrproper: clean
+	@$(RM) config.h config.mk
+
+
 ifdef CONFIG_CQSH3
-MACHINE_DEPENDS :=	init-cqsh3.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	ns8390.o
-endif
-
-# 0x00000000(address for ROM image)-0xa0000000(final destination) = 0x60000000
-ADJUST_VMA=0x60000000
-
 cqsh3: tools/cqsh3rom sh-stub.bin
 	./tools/cqsh3rom sh-stub.bin sh-stub.rom
 
@@ -97,194 +114,6 @@ tools/cqsh3rom: tools/cqsh3.c
 	gcc tools/cqsh3.c -O2 -o tools/cqsh3rom
 
 OTHER_FILES = tools/cqsh3rom sh-stub.rom
-
-endif
-ifdef CONFIG_CAT68701
-MACHINE_DEPENDS :=      init-cat68701.o cat68701.o cs89x0.o 
-# 0x00000000(address for ROM image)-0xa0000000(final destination) = 0x60000000
-ADJUST_VMA=0x60000000
 endif
 
-ifdef CONFIG_TEST3
-MACHINE_DEPENDS :=	init-sesh3.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	ns8390.o
-endif
-
-ADJUST_VMA=0x60000000
-
-sh-stub.srec: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		-O srec sh-stub.exe sh-stub.srec
-endif
-ifdef CONFIG_SE09
-MACHINE_DEPENDS :=	init-se09.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	ns8390.o
-endif
-
-ADJUST_VMA=0x0
-
-sh-stub.srec: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		-O srec sh-stub.exe sh-stub.srec
-endif
-ifdef CONFIG_SESH3
-MACHINE_DEPENDS :=	init-sesh3.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	ns8390.o
-endif
-
-ADJUST_VMA=0x0
-
-sh-stub.srec: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		-O srec sh-stub.exe sh-stub.srec
-endif
-ifdef CONFIG_SESHMV
-MACHINE_DEPENDS :=	init-seshmv.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	smc9000.o
-endif
-
-ADJUST_VMA=0x0
-
-sh-stub.srec: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		-O srec sh-stub.exe sh-stub.srec
-endif
-ifdef CONFIG_SESH4
-MACHINE_DEPENDS :=	init-sesh4.o
-
-ifdef CONFIG_ETHERNET
-ifndef CONFIG_CPU_SUBTYPE_SH7751
-MACHINE_DEPENDS +=	ns8390.o
-endif
-endif
-ifdef CONFIG_CPU_SUBTYPE_SH7751
-  ifdef CONFIG_PCI
-MACHINE_DEPENDS +=	pci-sh7751.o
-  endif
-  ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	pcnet32.o
-  endif
-endif
-
-#
-ADJUST_VMA=0x0
-
-sh-stub.srec: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		-O srec sh-stub.exe sh-stub.srec
-
-ifdef CONFIG_CPU_SUBTYPE_SH7751
-sh-stub-ram.srec: sh-stub.srec
-	$(OBJCOPY) -I srec -O srec sh-stub.srec sh-stub-ram.srec \
-		--change-section-lma=.sec1=0xac000000
-endif
-endif
-ifdef CONFIG_SESHM3
-MACHINE_DEPENDS := init-seshm3.o
-#
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS += smc9000.o
-endif
-ADJUST_VMA=-0xb8000000
-sh-stub.srec: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		-O srec sh-stub.exe sh-stub.srec --adjust-vma=${ADJUST_VMA}
-endif
-ifdef CONFIG_APSH4
-MACHINE_DEPENDS :=	init-apsh4.o
-# 0x00010000(address for ROM image)-0xa0010000(final destination) = 0x60000000
-ADJUST_VMA=0x60000000
-
-sh-stub.srec: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		--adjust-vma=${ADJUST_VMA} \
-		-O srec sh-stub.exe sh-stub.srec
-endif
-ifdef CONFIG_HP600
-MACHINE_DEPENDS :=	init-hp600.o
-#
-ADJUST_VMA=0x0
-endif
-ifdef CONFIG_DREAMCAST
-MACHINE_DEPENDS :=	init-dreamcast.o
-#
-ADJUST_VMA=0x0
-endif
-ifdef CONFIG_7750OVERDRIVE
-MACHINE_DEPENDS :=      init-od7750.o
-#
-ADJUST_VMA=0x00000000
-endif
-ifdef CONFIG_STB1OVERDRIVE
-MACHINE_DEPENDS :=      init-odstb1.o
-#
-ADJUST_VMA=0x00000000
-endif
-ifdef CONFIG_ADX
-MACHINE_DEPENDS :=	init-adx.o
-# 0x00000000(address for ROM image)-0xa0000000(final destination) = 0x60000000
-ADJUST_VMA=0x60000000
-
-sh-stub.srec: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		-O srec sh-stub.exe sh-stub.srec
-endif
-
-ifdef CONFIG_IDE
-MACHINE_DEPENDS +=	ide.o
-endif
-
-ifdef CONFIG_ETHERNET
-MACHINE_DEPENDS +=	ethboot/etherboot.o
-endif
-
-sh-stub.elf: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		--adjust-vma=${ADJUST_VMA} \
-		sh-stub.exe sh-stub.elf
-
-sh-stub.hex: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment \
-		--adjust-vma=${ADJUST_VMA} -O ihex \
-		sh-stub.exe sh-stub.hex
-
-sh-stub.bin: sh-stub.exe
-	$(OBJCOPY) -S -R .data -R .stack -R .bss -R .comment -O binary \
-		sh-stub.exe sh-stub.bin
-
-sh-stub.exe: main.o sh-stub.o entry.o ${MACHINE_DEPENDS} sh-sci.o setjmp.o \
-             string.o ctype.o vprintf.o rtc.o sh-stub.lds
-	$(LD) $(LINKFLAGS) entry.o main.o sh-stub.o ${MACHINE_DEPENDS} \
-		sh-sci.o setjmp.o string.o ctype.o vprintf.o rtc.o\
-		-o sh-stub.exe $(LIBGCC)
-	$(NM) -n sh-stub.exe > sh-stub.map
-
-sh-stub.lds: sh-stub.lds.S
-	$(CC) -D__ASSEMBLY__ -traditional -E -C -P -I. sh-stub.lds.S >sh-stub.lds
-
-ethboot/etherboot.o: ethboot/ethboot.c ethboot/bootp.c ethboot/nfs.c ethboot/net.c ethboot/string.c
-	make -C ethboot etherboot.o
-
-clean:
-	rm -rf sh-stub.exe sh-stub.bin sh-stub.elf *.o sh-stub.lds \
-	       sh-stub.hex sh-stub{,-ram}.srec sh-stub.map ${OTHER_FILES}
-	rm -f ethboot.lnk *~
-	make -C ethboot clean
-
-cs89x0.o:     config.h string.h defs.h cs89x0.h io.h
-ide.o:        config.h defs.h io.h
-main.o:       config.h defs.h string.h io.h
-ns8390.o:     config.h string.h defs.h stnic-se.h ne.h
-pci-sh7751.o: config.h defs.h io.h
-pcnet32.o:    config.h string.h defs.h io.h
-sh-sci.o:     config.h io.h
-sh-stub.o:    config.h defs.h string.h setjmp.h
-sh2000.o:     io.h
+-include $(obj-y:%.o=.%.P)

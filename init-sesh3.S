@@ -106,7 +106,11 @@ ENTRY(init_bsc)
 FRQCR_A:
 	.long	0xFFFFFF80	/* FRQCR Address */
 FRQCR_D:
+#ifdef CONFIG_CPU_SUBTYPE_SH_S
+        .long   0x0000a101      /* 3:1:1/2 */
+#else
 	.long	0x00000122	/* 4:1:1 */
+#endif	
 #ifdef CONFIG_SESH3_LARGE
 PECR_A:
 	.long	0xA4000108
@@ -129,13 +133,20 @@ BCR3_D:
 WCR1_A:
 	.long	0xFFFFFF64	/* WCR1 Address */
 WCR1_D:
+#ifdef CONFIG_CPU_SUBTYPE_SH_S 
+	.long   0x0C30
+#else
 	.long	0x0F30		/* Idle state cycle:
 				   WAITSEL=0  A6:1 A5:3 A4:3 A3:1 A2:3 A0:1 */
+#endif	
 WCR2_A:
 	.long	0xFFFFFF66	/* WCR2 Address */
 WCR2_D:
+#ifdef CONFIG_CPU_SUBTYPE_SH_S         
+        .long   0xBFDD
+#else
 	.long	0x7FDB		/* A6: 3 A5: 10 A4: 10 A3: 2 A2: 3 A0: 3  */
-
+#endif	
 LED_A:
 	.long	0xB0C00000	/* LED Address */
 

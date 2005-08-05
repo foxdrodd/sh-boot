@@ -1,4 +1,7 @@
-# CONFIG_LITTLE_ENDIAN is not set
 CONFIG_CPU_SH4=y
 CONFIG_SESH4=y
 CONFIG_CPU_SUBTYPE_SH7751=y
+### automatically imported from "config.h" file
+include config/config.mk-sesh4-7751
+
+CONFIG_LITTLE_ENDIAN=n

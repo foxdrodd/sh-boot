@@ -33,7 +33,6 @@ void rpc_init()
 	rpc_id = t ^ (t << 8) ^ (t << 16);
 }
 
-
 /**************************************************************************
 RPC_PRINTERROR - Print a low level RPC error message
 **************************************************************************/
@@ -44,8 +43,8 @@ static void rpc_printerror(struct rpc_t *rpc)
 		/* rpc_printerror() is called for any RPC related error,
 		 * suppress output if no low level RPC error happened.  */
 		printf("RPC error: (%d,%d,%d)\n", ntohl(rpc->u.reply.rstatus),
-			ntohl(rpc->u.reply.verifier),
-			ntohl(rpc->u.reply.astatus));
+		       ntohl(rpc->u.reply.verifier),
+		       ntohl(rpc->u.reply.astatus));
 	}
 }
 
@@ -73,7 +72,8 @@ static int rpc_lookup(int addr, int prog, int ver, int sport)
 	buf.u.call.data[7] = 0;
 	for (retries = 0; retries < MAX_RPC_RETRIES; retries++) {
 		udp_transmit(arptable[addr].ipaddr.s_addr, sport, SUNRPC_PORT,
-			(char *)(buf.u.call.data + 8) - (char *)&buf, &buf);
+			     (char *)(buf.u.call.data + 8) - (char *)&buf,
+			     &buf);
 		if (await_reply(AWAIT_RPC, sport, &id, TIMEOUT)) {
 			rpc = (struct rpc_t *)&nic.packet[ETHER_HDR_SIZE];
 			if (rpc->u.reply.rstatus || rpc->u.reply.verifier ||
@@ -109,22 +109,22 @@ int rpc_add_credentials(long *buf, int idx)
 	hl = (hostnamelen + 3) & ~3;
 
 	/* Provide an AUTH_UNIX credential.  */
-	buf[p++] = htonl(1);		/* AUTH_UNIX */
-	buf[p++] = htonl(hl+20);	/* auth length */
-	buf[p++] = htonl(0);		/* stamp */
+	buf[p++] = htonl(1);	/* AUTH_UNIX */
+	buf[p++] = htonl(hl + 20);	/* auth length */
+	buf[p++] = htonl(0);	/* stamp */
 	buf[p++] = htonl(hostnamelen);	/* hostname string */
 	if (hostnamelen & 3) {
-		buf[p + hostnamelen / 4] = 0; /* add zero padding */
+		buf[p + hostnamelen / 4] = 0;	/* add zero padding */
 	}
 	memcpy(buf + p, hostname, hostnamelen);
 	p += hl / 4;
-	buf[p++] = 0;			/* uid */
-	buf[p++] = 0;			/* gid */
-	buf[p++] = 0;			/* auxiliary gid list */
+	buf[p++] = 0;		/* uid */
+	buf[p++] = 0;		/* gid */
+	buf[p++] = 0;		/* auxiliary gid list */
 
 	/* Provide an AUTH_NONE verifier.  */
-	buf[p++] = 0;			/* AUTH_NONE */
-	buf[p++] = 0;			/* auth length */
+	buf[p++] = 0;		/* AUTH_NONE */
+	buf[p++] = 0;		/* auth length */
 
 	return p;
 }
@@ -181,7 +181,8 @@ static int nfs_mount(int server, int port, char *path, char *fh, int sport)
 	p += (pathlen + 3) / 4;
 	for (retries = 0; retries < MAX_RPC_RETRIES; retries++) {
 		udp_transmit(arptable[server].ipaddr.s_addr, sport, port,
-			(char *)(buf.u.call.data + p) - (char *)&buf, &buf);
+			     (char *)(buf.u.call.data + p) - (char *)&buf,
+			     &buf);
 		if (await_reply(AWAIT_RPC, sport, &id, TIMEOUT)) {
 			rpc = (struct rpc_t *)&nic.packet[ETHER_HDR_SIZE];
 			if (rpc->u.reply.rstatus || rpc->u.reply.verifier ||
@@ -234,7 +235,8 @@ void nfs_umountall(int server)
 	p = rpc_add_credentials(buf.u.call.data, 0);
 	for (retries = 0; retries < MAX_RPC_RETRIES; retries++) {
 		udp_transmit(arptable[server].ipaddr.s_addr, oport, mount_port,
-			(char *)(buf.u.call.data + p) - (char *)&buf, &buf);
+			     (char *)(buf.u.call.data + p) - (char *)&buf,
+			     &buf);
 		if (await_reply(AWAIT_RPC, oport, &id, TIMEOUT)) {
 			rpc = (struct rpc_t *)&nic.packet[ETHER_HDR_SIZE];
 			if (rpc->u.reply.rstatus || rpc->u.reply.verifier ||
@@ -252,7 +254,7 @@ void nfs_umountall(int server)
 NFS_LOOKUP - Lookup Pathname
 **************************************************************************/
 static int nfs_lookup(int server, int port, char *fh, char *path, char *nfh,
-	int sport)
+		      int sport)
 {
 	struct rpc_t buf, *rpc;
 	unsigned long id;
@@ -277,7 +279,8 @@ static int nfs_lookup(int server, int port, char *fh, char *path, char *nfh,
 	p += (pathlen + 3) / 4;
 	for (retries = 0; retries < MAX_RPC_RETRIES; retries++) {
 		udp_transmit(arptable[server].ipaddr.s_addr, sport, port,
-			(char *)(buf.u.call.data + p) - (char *)&buf, &buf);
+			     (char *)(buf.u.call.data + p) - (char *)&buf,
+			     &buf);
 		if (await_reply(AWAIT_RPC, sport, &id, TIMEOUT)) {
 			rpc = (struct rpc_t *)&nic.packet[ETHER_HDR_SIZE];
 			if (rpc->u.reply.rstatus || rpc->u.reply.verifier ||
@@ -324,10 +327,11 @@ static int nfs_read(int server, int port, char *fh, int offset, int len,
 	p += NFS_FHSIZE / 4;
 	buf.u.call.data[p++] = htonl(offset);
 	buf.u.call.data[p++] = htonl(len);
-	buf.u.call.data[p++] = 0;		/* unused parameter */
+	buf.u.call.data[p++] = 0;	/* unused parameter */
 	for (retries = 0; retries < MAX_RPC_RETRIES; retries++) {
 		udp_transmit(arptable[server].ipaddr.s_addr, sport, port,
-			(char *)(buf.u.call.data + p) - (char *)&buf, &buf);
+			     (char *)(buf.u.call.data + p) - (char *)&buf,
+			     &buf);
 		if (await_reply(AWAIT_RPC, sport, &id, TIMEOUT)) {
 			rpc = (struct rpc_t *)&nic.packet[ETHER_HDR_SIZE];
 			if (rpc->u.reply.rstatus || rpc->u.reply.verifier ||
@@ -354,12 +358,12 @@ static int nfs_read(int server, int port, char *fh, int offset, int len,
 /**************************************************************************
 NFS - Download extended BOOTP data, or kernel image from NFS server
 **************************************************************************/
-int nfs(const char *name, int (*fnc)(unsigned char *, int, int, int))
+int nfs(const char *name, int (*fnc) (unsigned char *, int, int, int))
 {
 	int sport;
 	int err, namelen = strlen(name);
 	char dirname[400], *fname;
-	char dirfh[NFS_FHSIZE];		/* file handle of directory */
+	char dirfh[NFS_FHSIZE];	/* file handle of directory */
 	char filefh[NFS_FHSIZE];	/* file handle of kernel image */
 	int block, rlen, size, offs, len;
 	struct rpc_t *rpc;
@@ -373,7 +377,7 @@ int nfs(const char *name, int (*fnc)(unsigned char *, int, int, int))
 	await_reply(AWAIT_QDRAIN, 0, NULL, 0);
 
 	sport = oport++;
-	if (oport > START_OPORT+OPORT_SWEEP) {
+	if (oport > START_OPORT + OPORT_SWEEP) {
 		oport = START_OPORT;
 	}
 
@@ -403,7 +407,6 @@ int nfs(const char *name, int (*fnc)(unsigned char *, int, int, int))
 		return 0;
 	}
 
-
 	err = nfs_mount(ARP_SERVER, mount_port, dirname, dirfh, sport);
 	if (err) {
 		printf("mounting %s: ", dirname);
@@ -422,8 +425,8 @@ int nfs(const char *name, int (*fnc)(unsigned char *, int, int, int))
 	}
 
 	offs = 0;
-	block = 1;	/* blocks are numbered starting from 1 */
-	size = -1;	/* will be set properly with the first reply */
+	block = 1;		/* blocks are numbered starting from 1 */
+	size = -1;		/* will be set properly with the first reply */
 	len = NFS_READ_SIZE;	/* first request is always full size */
 	do {
 		err = nfs_read(ARP_SERVER, nfs_port, filefh, offs, len, sport);
@@ -446,7 +449,7 @@ int nfs(const char *name, int (*fnc)(unsigned char *, int, int, int))
 		}
 
 		err = fnc((char *)&rpc->u.reply.data[19], block, rlen,
-			(offs+rlen == size));
+			  (offs + rlen == size));
 		if (err >= 0) {
 			nfs_umountall(ARP_SERVER);
 			return err;
@@ -455,8 +458,8 @@ int nfs(const char *name, int (*fnc)(unsigned char *, int, int, int))
 		block++;
 		offs += rlen;
 		/* last request is done with matching requested read size */
-		if (size-offs < NFS_READ_SIZE) {
-			len = size-offs;
+		if (size - offs < NFS_READ_SIZE) {
+			len = size - offs;
 		}
 	} while (len != 0);
 	/* len == 0 means that all the file has been read */

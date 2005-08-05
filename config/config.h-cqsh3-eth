@@ -1,6 +1,0 @@
-#include "config/config.h-cqsh3"
-
-#define CONFIG_IDE			1
-#define CONFIG_ETHERNET			1
-#define CONFIG_DIRECT_COMPACT_FLASH	1
-#define CONFIG_NE2000			1

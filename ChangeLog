@@ -1,3 +1,247 @@
+2005-06-09  Hiroshi DOYU  <Hiroshi_DOYU@montavista.co.jp>
+
+	Alain Volmat <avolmat@src.ricoh.co.jp>
+	* fixed a lot files to keep consistency.	
+
+2005-03-16 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      fixed support of se7709s
+
+    modified files:
+     config/config.mk-sesh3 config/config.mk-sesh3-ide-eth
+     init-sesh3.S
+
+
+2005-02-20 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      increment version number 0.11 -> 0.12
+
+     increment version number 0.11 -> 0.12
+
+
+2005-02-17Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      remove obsolete files
+
+    obsolete memory map file were removed.
+    
+
+    removed files:
+     machine/.arch-ids/test4.mem.id machine/apsh4.mem
+     machine/cat68701.mem machine/cqsh3.mem machine/cqsh4.mem
+     machine/dreamcast.mem machine/hp600.mem machine/od7750.mem
+     machine/odstb1.mem machine/sesh3.mem machine/sesh4.mem
+     machine/sh2000.mem machine/test.mem machine/test3.mem
+     machine/test4.mem
+
+    removed directories:
+     machine
+
+
+2005-02-17 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      "config.mk" convered "config.h"
+
+    It seems to be residual that 2 configuration file exist at onece.
+    So "config.mk" and "config.mk" was integrated into "config.mk" and
+    "config.h" is generated from "config.mk". So from now, Only "config.mk"
+    have to be mainteined along with your target.
+    
+    
+
+    new files:
+     config/config.mk-adx-scif config/config.mk-sesh3-ide-eth-large
+     config/config.mk-sesh3-large
+     config/config.mk-sesh3eb-ide-eth-large
+     tools/mkconfigh.pl
+
+    removed files:
+     config/config.h-adx
+     config/config.h-adx-scif config/config.h-apsh4
+     config/config.h-cat68701 config/config.h-cqsh3
+     config/config.h-cqsh3-eth config/config.h-cqsh4
+     config/config.h-cqsh4-eth config/config.h-cqsh4.big
+     config/config.h-dreamcast config/config.h-hp600
+     config/config.h-od7750 config/config.h-odstb1
+     config/config.h-se09 config/config.h-se09-eth
+     config/config.h-sesh3 config/config.h-sesh3-eth
+     config/config.h-sesh3-eth.big config/config.h-sesh3-ide
+     config/config.h-sesh3-ide-eth
+     config/config.h-sesh3-ide-eth-large
+     config/config.h-sesh3-large config/config.h-sesh3-pcmcia
+     config/config.h-sesh3eb-ide-eth
+     config/config.h-sesh3eb-ide-eth-large config/config.h-sesh4
+     config/config.h-sesh4-7751 config/config.h-sesh4-7751-eth
+     config/config.h-sesh4-7751-eth.big
+     config/config.h-sesh4-7751.big config/config.h-sesh4-7751r
+     config/config.h-sesh4-7751r-eth
+     config/config.h-sesh4-7751r-pcmcia config/config.h-sesh4-eth
+     config/config.h-sesh4-ide config/config.h-sesh4-ide-eth
+     config/config.h-sesh4-pcmcia config/config.h-sesh4eb-ide-eth
+     config/config.h-seshm3-eth config/config.h-seshmv-eth
+     config/config.h-sh2000 config/config.h-test
+     config/config.h-test3 config/config.h-test4
+
+    modified files:
+     Makefile TODO config/config.mk-adx config/config.mk-apsh4
+     config/config.mk-cat68701 config/config.mk-cqsh3
+     config/config.mk-cqsh3-eth config/config.mk-cqsh4
+     config/config.mk-cqsh4-eth config/config.mk-cqsh4.big
+     config/config.mk-dreamcast config/config.mk-hp600
+     config/config.mk-od7750 config/config.mk-odstb1
+     config/config.mk-se09 config/config.mk-se09-eth
+     config/config.mk-sesh3 config/config.mk-sesh3-eth
+     config/config.mk-sesh3-eth.big config/config.mk-sesh3-ide
+     config/config.mk-sesh3-ide-eth config/config.mk-sesh3-pcmcia
+     config/config.mk-sesh3eb-ide-eth config/config.mk-sesh4
+     config/config.mk-sesh4-7751 config/config.mk-sesh4-7751-eth
+     config/config.mk-sesh4-7751-eth.big
+     config/config.mk-sesh4-7751.big config/config.mk-sesh4-7751r
+     config/config.mk-sesh4-7751r-eth
+     config/config.mk-sesh4-7751r-pcmcia config/config.mk-sesh4-eth
+     config/config.mk-sesh4-ide config/config.mk-sesh4-ide-eth
+     config/config.mk-sesh4-pcmcia config/config.mk-sesh4eb-ide-eth
+     config/config.mk-seshm3-eth config/config.mk-seshmv-eth
+     config/config.mk-sh2000 config/config.mk-test
+     config/config.mk-test3 config/config.mk-test4 ethboot/Makefile
+
+
+2005-02-17 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      added "mrproper:" in Makefile
+
+     added "mrproper:" in Makefile in order to remove config.h and config.mk
+    
+
+    modified files:
+     Makefile
+
+
+2005-02-17 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      renamed ADJUST_VMA to CONFIG_ADJUST_VMA
+
+     renamed ADJUST_VMA to CONFIG_ADJUST_VMA
+
+    modified files:
+     Makefile config/config.mk-cat68701 config/config.mk-cqsh3-eth
+     config/config.mk-cqsh4-eth config/config.mk-se09-eth
+     config/config.mk-sesh3-eth config/config.mk-sesh3-eth.big
+     config/config.mk-sesh3-ide-eth
+     config/config.mk-sesh3eb-ide-eth
+     config/config.mk-sesh4-7751-eth
+     config/config.mk-sesh4-7751-eth.big
+     config/config.mk-sesh4-7751r-eth config/config.mk-sesh4-eth
+     config/config.mk-sesh4-ide-eth
+     config/config.mk-sesh4eb-ide-eth config/config.mk-seshm3-eth
+     config/config.mk-seshmv-eth config/config.mk-sh2000
+
+
+2005-02-17 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      introduced TOPDIR
+
+    The macro "TOPDIR" was newly added and exported into whole build system
+    in order to keep the location of the top source directly in it.
+    
+
+    modified files:
+     Makefile ethboot/Makefile
+
+
+2005-02-15 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      summarized all initial codes into .init section
+	
+    In order to avoid adding"#ifdef"s in source files, added "__initcall.init" sections.
+    
+    
+
+    modified files:
+     ide.c main.c pci-sh7751.c sh-sci.c sh-stub.lds.S
+
+
+2005-02-15 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      Restructure Makefile
+	
+    Some CONFIG_* and ADJUST_VMA in Makefile was moved into config/* files.
+    
+    CONFIG_NE2000,CONFIG_STNIC,CONFIG_SMC9000,CONFIG_PCNET32,CONFIG_CS89X0 was newly added.
+    
+    Auto-Dependecy Generation was introduced
+        See <http://make.paulandlesley.org/autodep.html>
+    
+    "Rules.mak" was added in order to handle build process consistently.
+    
+    
+
+    new files:
+     .arch-ids/Rules.mak.id Rules.mak
+
+    modified files:
+     Makefile config/config.h-sesh4 config/config.h-sesh4-7751r-eth
+     config/config.h-sesh4-eth config/config.mk-cat68701
+     config/config.mk-cqsh3-eth config/config.mk-cqsh4-eth
+     config/config.mk-se09-eth config/config.mk-sesh3-eth
+     config/config.mk-sesh3-eth.big config/config.mk-sesh3-ide-eth
+     config/config.mk-sesh3eb-ide-eth
+     config/config.mk-sesh4-7751-eth
+     config/config.mk-sesh4-7751-eth.big
+     config/config.mk-sesh4-7751r-eth config/config.mk-sesh4-eth
+     config/config.mk-sesh4-ide-eth
+     config/config.mk-sesh4eb-ide-eth config/config.mk-seshm3-eth
+     config/config.mk-seshmv-eth config/config.mk-sh2000
+     ethboot/Makefile
+
+
+2005-02-15 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      removed residual "sh-stub.srec:" entry
+
+    Removed residual "sh-stub.srec:" entry in Makefile.
+    
+
+    modified files:
+     Makefile
+
+
+2005-02-15 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      adapted kernel XIP style memory map
+	
+    All ".data" section, which includes ethboot ".data" section, should be 
+    handled integrally. So ".data" section will be moved into appropriate 
+    place after booting up.
+    
+    Single "CFLAGS" was introduced through out source tree.
+    
+
+    modified files:
+     Makefile entry.S ethboot/Makefile ethboot/ethboot.c
+     sh-stub.lds.S
+
+
+2005-02-15 Hiroshi DOYU <Hiroshi_DOYU@montavista.co.jp>
+
+    Summary:
+      move "init_ide()" from "entry.S" to "main.c"
+
+    modified files:
+     entry.S main.c
+
+
 2005-01-20  Hiroshi DOYU  <Hiroshi_DOYU@montavista.co.jp>
 
 	SolutionEngine SHMobile3 SH73180 support.

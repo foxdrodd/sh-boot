@@ -143,16 +143,14 @@ Author: Martin Renters
  *	functions.
  */
 
-struct nic
-{
-	char		*packet;
-	unsigned int	packetlen;
-	unsigned char	*node_addr;
+struct nic {
+	char *packet;
+	unsigned int packetlen;
+	unsigned char *node_addr;
 };
 
-
 typedef struct {
-	unsigned long	s_addr;
+	unsigned long s_addr;
 } in_addr;
 
 struct arptable_t {
@@ -218,14 +216,14 @@ struct bootp_t {
 
 struct bootpd_t {
 	struct bootp_t bootp_reply;
-	unsigned char  bootp_extension[MAX_BOOTP_EXTLEN];
+	unsigned char bootp_extension[MAX_BOOTP_EXTLEN];
 };
 
 struct rpc_t {
 	struct iphdr ip;
 	struct udphdr udp;
 	union {
-		char data[300];		/* longest RPC call must fit!!!! */
+		char data[300];	/* longest RPC call must fit!!!! */
 		struct {
 			long id;
 			long type;
@@ -277,25 +275,26 @@ struct rpc_t {
 External prototypes
 ***************************************************************************/
 extern void rpc_init(void);
-extern int nfs (const char *name, int (*)(unsigned char *, int, int, int));
-extern void nfs_umountall (int);
-extern int bootp (void);
-extern int udp_transmit (unsigned long destip, unsigned int srcsock,
-			 unsigned int destsock, int len, const void *buf);
-extern int await_reply (int type, int ival, void *ptr, int timeout);
-extern int decode_rfc1533 (unsigned char *, int, int, int);
-extern unsigned short ipchksum (unsigned short *, int len);
-extern void rfc951_sleep (int);
-extern void cleanup_net (void);
-extern void cleanup (void);
+extern int nfs(const char *name, int (*)(unsigned char *, int, int, int));
+extern void nfs_umountall(int);
+extern int bootp(void);
+extern int udp_transmit(unsigned long destip, unsigned int srcsock,
+			unsigned int destsock, int len, const void *buf);
+extern int await_reply(int type, int ival, void *ptr, int timeout);
+extern int decode_rfc1533(unsigned char *, int, int, int);
+extern unsigned short ipchksum(unsigned short *, int len);
+extern void rfc951_sleep(int);
+extern void cleanup_net(void);
+extern void cleanup(void);
 
-extern int eth_probe (void);
-extern int eth_poll (void);
-extern void eth_transmit (const char *, unsigned int, unsigned int, const void *p);
-extern void eth_disable (void);
+extern int eth_probe(void);
+extern int eth_poll(void);
+extern void eth_transmit(const char *, unsigned int, unsigned int,
+			 const void *p);
+extern void eth_disable(void);
 
-extern unsigned long currticks (void);
-extern void exit (int status);
+extern unsigned long currticks(void);
+extern void exit(int status);
 
 /***************************************************************************
 External variables
@@ -318,8 +317,8 @@ extern unsigned char *end_of_rfc1533;
 extern struct nic nic;
 
 extern unsigned long xid;
-extern char    rfc1533_cookie[];
-extern char    rfc1533_end[];
+extern char rfc1533_cookie[];
+extern char rfc1533_end[];
 extern int dhcp_reply;
 extern in_addr dhcp_server;
 extern in_addr dhcp_addr;

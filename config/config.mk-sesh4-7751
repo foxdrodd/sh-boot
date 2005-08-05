@@ -2,3 +2,7 @@ CONFIG_LITTLE_ENDIAN=y
 CONFIG_CPU_SH4=y
 CONFIG_SESH4=y
 CONFIG_CPU_SUBTYPE_SH7751=y
+### automatically imported from "config.h" file
+include config/config.mk-sesh4
+
+CONFIG_CPU_SUBTYPE_SH7751=y

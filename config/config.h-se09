@@ -1,4 +1,0 @@
-#include "config/config.h-sesh3"
-#undef	CONFIG_SESH3
-#define CONFIG_SE09		1
-

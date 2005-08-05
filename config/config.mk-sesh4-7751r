@@ -3,3 +3,7 @@ CONFIG_CPU_SH4=y
 CONFIG_SESH4=y
 CONFIG_CPU_SUBTYPE_SH7751=y
 CONFIG_CPU_SUBTYPE_SH_R=y
+### automatically imported from "config.h" file
+include config/config.mk-sesh4-7751
+
+CONFIG_CPU_SUBTYPE_SH_R=y

@@ -10,14 +10,37 @@ typedef unsigned long u32;
 
 /* io for 7300se */
 #define A(a) ((volatile unsigned short*)(0xb4000000UL-0x300+(a)))
-unsigned short inw(int a){return *A(a);}
-void outw(unsigned short d, int a){*A(a)=d;}
-void insw(int a, short *b, int l){do{ *b++=*A(a);}while(--l);}
-void outsw(int a, short *b, int l){do{ *A(a)=*b++;}while(--l);}
+unsigned short inw(int a)
+{
+	return *A(a);
+}
+void outw(unsigned short d, int a)
+{
+	*A(a) = d;
+}
+void insw(int a, short *b, int l)
+{
+	do {
+		*b++ = *A(a);
+	} while (--l);
+}
+void outsw(int a, short *b, int l)
+{
+	do {
+		*A(a) = *b++;
+	} while (--l);
+}
+
 //void insw(int a, short *b, int l){do{ *b++=inw(a);}while(--l);}
 //void outsw(int a, short *b, int l){do{ outw(*b++,a);}while(--l);}
-unsigned short inb(int a){return (*A(a&~1))>>((a&1)?8:0);}
-void outb(unsigned char d, int a){*A(a&~1)=(unsigned short)d<<((a&1)?8:0);}
+unsigned short inb(int a)
+{
+	return (*A(a & ~1)) >> ((a & 1) ? 8 : 0);
+}
+void outb(unsigned char d, int a)
+{
+	*A(a & ~1) = (unsigned short)d << ((a & 1) ? 8 : 0);
+}
 
 /*------------------ glue logic for ipl+g and etherboot -----------------*/
 static void phy_write(int ioaddr, int phy_id, int location, int value);
@@ -32,64 +55,69 @@ static int phy_read(int ioaddr, int phy_id, int location);
 #define htonl ntohl
 #define htons ntohs
 
-#define PHY 0	// phy address.
+#define PHY 0			// phy address.
 
-static struct nic
-{
-	void		(*reset)(struct nic *);
-	int		(*poll)(struct nic *);
-	void		(*transmit)(struct nic *, const char *d,
-				unsigned int t, unsigned int s, const char *p);
-	void		(*disable)(struct nic *);
-	char		aui;
-	unsigned char	*node_addr;
-	char		*packet;
-	unsigned int	packetlen;
-	void		*priv_data;	/* driver can hang private data here */
+static struct nic {
+	void (*reset) (struct nic *);
+	int (*poll) (struct nic *);
+	void (*transmit) (struct nic *, const char *d,
+			  unsigned int t, unsigned int s, const char *p);
+	void (*disable) (struct nic *);
+	char aui;
+	unsigned char *node_addr;
+	char *packet;
+	unsigned int packetlen;
+	void *priv_data;	/* driver can hang private data here */
 } nic;
-static unsigned char __attribute__ ((aligned (2))) mac[ETHER_ADDR_SIZE];
+static unsigned char __attribute__ ((aligned(2))) mac[ETHER_ADDR_SIZE];
 
-static inline unsigned long currticks(void){ return get_tick(); }
+static inline unsigned long currticks(void)
+{
+	return get_tick();
+}
 
 struct nic *smc9000_probe(struct nic *nic, unsigned short *probe_addrs);
 
-static int eth_probe(void){
+static int eth_probe(void)
+{
 	nic.node_addr = mac;
-	return smc9000_probe(&nic, 0)!=0;
+	return smc9000_probe(&nic, 0) != 0;
 }
 
 int eth_reset(unsigned int stop)
 {
-	if(!nic.node_addr && !eth_probe()) return -1;
-	if(stop){
-		(*nic.reset)(&nic);
-		nic.node_addr=0; // mark as "Not Initialized".
+	if (!nic.node_addr && !eth_probe())
+		return -1;
+	if (stop) {
+		(*nic.reset) (&nic);
+		nic.node_addr = 0;	// mark as "Not Initialized".
 	}
 	outw(0x8000, 0x304);
 	sleep128(1);
 	outw(0x0000, 0x304);
 	phy_write(0x300, PHY, 0, 0x8000);	// reset
-	sleep128(10);				// at least 50ms
+	sleep128(10);		// at least 50ms
 	phy_write(0x300, PHY, 0, 0x0000);	// 10M, MII enable
 	outw(0, 0x30e);
 	outw(0x0080, 0x30a);	// 10M, half, LED TX/RX, LED LINK
 	return 0;
 }
 
-int eth_node_addr (unsigned int func, char *p)
+int eth_node_addr(unsigned int func, char *p)
 {
 	int i;
-	switch(func){
-	case 0:	// get
-		if(!nic.node_addr && !eth_probe()) return -1;
-		memcpy (p, mac, ETHER_ADDR_SIZE);
+	switch (func) {
+	case 0:		// get
+		if (!nic.node_addr && !eth_probe())
+			return -1;
+		memcpy(p, mac, ETHER_ADDR_SIZE);
 		return 0;
-	case 1:	// set
+	case 1:		// set
 		/* etherboot seems to provide no way to set MAC */
-		memcpy (mac, p, ETHER_ADDR_SIZE);
+		memcpy(mac, p, ETHER_ADDR_SIZE);
 		outw(1, 0x30e);	// bank 1
-		for(i=0;i<6;i+=2)
-			outw(mac[i]+mac[i+1]*256, 0x304+i);
+		for (i = 0; i < 6; i += 2)
+			outw(mac[i] + mac[i + 1] * 256, 0x304 + i);
 		return 0;
 	default:
 		return -1;
@@ -99,8 +127,8 @@ int eth_node_addr (unsigned int func, char *p)
 int eth_receive(char *p, unsigned int *len)
 {
 	int r;
-	nic.packet=p;
-	r =(*nic.poll)(&nic);
+	nic.packet = p;
+	r = (*nic.poll) (&nic);
 	*len = nic.packetlen;
 	//printf("R(%X,%d)",p,*len);
 
@@ -109,9 +137,9 @@ int eth_receive(char *p, unsigned int *len)
 
 int eth_transmit(const char *d, unsigned int t, unsigned int s, const char *p)
 {
-//	printf("T(%X,%X,%X,%X)\n",d,t,s,p);
-	(*nic.transmit)(&nic, d, t, s, p);
-	return 0;	// ethboot drivers returns "void".
+//      printf("T(%X,%X,%X,%X)\n",d,t,s,p);
+	(*nic.transmit) (&nic, d, t, s, p);
+	return 0;		// ethboot drivers returns "void".
 }
 
 /*---------- mii support code by yoshii ----------*/
@@ -123,23 +151,23 @@ int eth_transmit(const char *d, unsigned int t, unsigned int s, const char *p)
 
 static void mdio_delay(void)
 {
-	volatile int i,v;
+	volatile int i, v;
 	/* XXX: use better method... */
-	for(i=100; i>0; i--)
-		v=i;
+	for (i = 100; i > 0; i--)
+		v = i;
 	return;
 }
 static unsigned int mdio_read_bits(int ioaddr, int count)
 {
-	int retval=0;
+	int retval = 0;
 	unsigned int p;
 	unsigned short mgmt;
 
-	mgmt = inw( ioaddr + MGMT) &~MGMT_MDOE;
-	for( p = 1<<(count-1); p; p>>=1){
-		outw( mgmt&~MGMT_MCLK, ioaddr + MGMT), mdio_delay(); 
-		retval |= ((inw(ioaddr + MGMT) & MGMT_MDI)? p :0);
-		outw( mgmt| MGMT_MCLK, ioaddr + MGMT), mdio_delay(); 
+	mgmt = inw(ioaddr + MGMT) & ~MGMT_MDOE;
+	for (p = 1 << (count - 1); p; p >>= 1) {
+		outw(mgmt & ~MGMT_MCLK, ioaddr + MGMT), mdio_delay();
+		retval |= ((inw(ioaddr + MGMT) & MGMT_MDI) ? p : 0);
+		outw(mgmt | MGMT_MCLK, ioaddr + MGMT), mdio_delay();
 	}
 	return retval;
 }
@@ -148,38 +176,38 @@ static void mdio_write_bits(int ioaddr, unsigned int value, int count)
 	unsigned int p;
 	unsigned short mgmt;
 
-	mgmt = inw( ioaddr + MGMT) |MGMT_MDOE;
-	for( p = 1<<(count-1); p; p>>=1){
-		mgmt = (value & p)? (mgmt|MGMT_MDO) :(mgmt&~MGMT_MDO);
-		outw( mgmt&~MGMT_MCLK, ioaddr + MGMT), mdio_delay(); 
-		outw( mgmt| MGMT_MCLK, ioaddr + MGMT), mdio_delay(); 
+	mgmt = inw(ioaddr + MGMT) | MGMT_MDOE;
+	for (p = 1 << (count - 1); p; p >>= 1) {
+		mgmt = (value & p) ? (mgmt | MGMT_MDO) : (mgmt & ~MGMT_MDO);
+		outw(mgmt & ~MGMT_MCLK, ioaddr + MGMT), mdio_delay();
+		outw(mgmt | MGMT_MCLK, ioaddr + MGMT), mdio_delay();
 	}
 }
 
 static int phy_read(int ioaddr, int phy_id, int location)
 {
 	int retval;
-	outw( 3, ioaddr+0xe);
+	outw(3, ioaddr + 0xe);
 	mdio_write_bits(ioaddr, 0xffffffffUL, 32);	// preamble
-	mdio_write_bits(ioaddr, 6, 4);		// start + read command
+	mdio_write_bits(ioaddr, 6, 4);	// start + read command
 	mdio_write_bits(ioaddr, phy_id, 5);	// select dev
 	mdio_write_bits(ioaddr, location, 5);	// select reg
-	mdio_read_bits(ioaddr, 2);		// turnaround
+	mdio_read_bits(ioaddr, 2);	// turnaround
 	retval = mdio_read_bits(ioaddr, 16);	// data
-//	mdio_read_bits(ioaddr, 1);		// idle
+//      mdio_read_bits(ioaddr, 1);              // idle
 	return retval;
 }
 
 static void phy_write(int ioaddr, int phy_id, int location, int value)
 {
-	outw( 3, ioaddr+0xe);
+	outw(3, ioaddr + 0xe);
 	mdio_write_bits(ioaddr, 0xffffffffUL, 32);	// preamble
-	mdio_write_bits(ioaddr, 5, 4);		// start + write command
+	mdio_write_bits(ioaddr, 5, 4);	// start + write command
 	mdio_write_bits(ioaddr, phy_id, 5);	// select dev
 	mdio_write_bits(ioaddr, location, 5);	// select reg
-	mdio_write_bits(ioaddr, 2, 2);		// turnaround
+	mdio_write_bits(ioaddr, 2, 2);	// turnaround
 	mdio_write_bits(ioaddr, value, 16);	// data
-	mdio_read_bits(ioaddr, 1);		// idle
+	mdio_read_bits(ioaddr, 1);	// idle
 }
 
 /*---------- code blow is copied and modified from etherboot 4.8 ----------*/
@@ -209,7 +237,7 @@ static void phy_write(int ioaddr, int phy_id, int location, int value)
  *
  *---------------------------------------------------------------------------*/
 #define LINUX_OUT_MACROS 1
-#undef SMC9000_VERBOSE  
+#undef SMC9000_VERBOSE
 #undef SMC9000_DEBUG
 
 //#include "etherboot.h"
@@ -220,22 +248,22 @@ static void phy_write(int ioaddr, int phy_id, int location, int value)
 # define _outb outb
 # define _outw outw
 
-static const char       smc9000_version[] = "Version 0.99 98-09-30";
-static unsigned int	smc9000_base;
-static const char * const interfaces[ 2 ] = { "TP", "AUI" };
-static const char * const chip_ids[ 15 ] =  {
-   NULL, NULL, NULL,
-   /* 3 */ "SMC91C90/91C92",
-   /* 4 */ "SMC91C94",
-   /* 5 */ "SMC91C95",
-   NULL,
-   /* 7 */ "SMC91C100",
-   /* 8 */ "SMC91C100FD",
-   /* 9 */ "SMC91C11x",
-   NULL, NULL,
-   NULL, NULL, NULL
+static const char smc9000_version[] = "Version 0.99 98-09-30";
+static unsigned int smc9000_base;
+static const char *const interfaces[2] = { "TP", "AUI" };
+static const char *const chip_ids[15] = {
+	NULL, NULL, NULL,
+	/* 3 */ "SMC91C90/91C92",
+	/* 4 */ "SMC91C94",
+	/* 5 */ "SMC91C95",
+	NULL,
+	/* 7 */ "SMC91C100",
+	/* 8 */ "SMC91C100FD",
+	/* 9 */ "SMC91C11x",
+	NULL, NULL,
+	NULL, NULL, NULL
 };
-static const char      smc91c96_id[] = "SMC91C96";
+static const char smc91c96_id[] = "SMC91C96";
 
 /*
  * Function: smc_reset( int ioaddr )
@@ -255,29 +283,28 @@ static const char      smc91c96_id[] = "SMC91C96";
 */
 static void smc_reset(int ioaddr)
 {
-   /* This resets the registers mostly to defaults, but doesn't
-    * affect EEPROM.  That seems unnecessary */
-   SMC_SELECT_BANK(ioaddr, 0);
-   _outw( RCR_SOFTRESET, ioaddr + RCR );
+	/* This resets the registers mostly to defaults, but doesn't
+	 * affect EEPROM.  That seems unnecessary */
+	SMC_SELECT_BANK(ioaddr, 0);
+	_outw(RCR_SOFTRESET, ioaddr + RCR);
 
-   /* this should pause enough for the chip to be happy */
-   SMC_DELAY(ioaddr);
+	/* this should pause enough for the chip to be happy */
+	SMC_DELAY(ioaddr);
 
-   /* Set the transmit and receive configuration registers to
-    * default values */
-   _outw(RCR_CLEAR, ioaddr + RCR);
-   _outw(TCR_CLEAR, ioaddr + TCR);
+	/* Set the transmit and receive configuration registers to
+	 * default values */
+	_outw(RCR_CLEAR, ioaddr + RCR);
+	_outw(TCR_CLEAR, ioaddr + TCR);
 
-   /* Reset the MMU */
-   SMC_SELECT_BANK(ioaddr, 2);
-   _outw( MC_RESET, ioaddr + MMU_CMD );
+	/* Reset the MMU */
+	SMC_SELECT_BANK(ioaddr, 2);
+	_outw(MC_RESET, ioaddr + MMU_CMD);
 
-   /* Note:  It doesn't seem that waiting for the MMU busy is needed here,
-    * but this is a place where future chipsets _COULD_ break.  Be wary
-    * of issuing another MMU command right after this */
-   _outb(0, ioaddr + INT_MASK);
+	/* Note:  It doesn't seem that waiting for the MMU busy is needed here,
+	 * but this is a place where future chipsets _COULD_ break.  Be wary
+	 * of issuing another MMU command right after this */
+	_outb(0, ioaddr + INT_MASK);
 }
-
 
 /*----------------------------------------------------------------------
  * Function: smc_probe( int ioaddr )
@@ -293,63 +320,61 @@ static void smc_reset(int ioaddr)
  *
  * ---------------------------------------------------------------------
  */
-static int smc_probe( int ioaddr )
+static int smc_probe(int ioaddr)
 {
-   word bank;
-   word	revision_register;
-   word base_address_register;
+	word bank;
+	word revision_register;
+	word base_address_register;
 
-   /* First, see if the high byte is 0x33 */
-   bank = inw(ioaddr + BANK_SELECT);
-   if ((bank & 0xFF00) != 0x3300) {
-      return -1;
-   }
-   /* The above MIGHT indicate a device, but I need to write to further
-    *	test this.  */
-   _outw(0x0, ioaddr + BANK_SELECT);
-   bank = inw(ioaddr + BANK_SELECT);
-   if ((bank & 0xFF00) != 0x3300) {
-      return -1;
-   }
+	/* First, see if the high byte is 0x33 */
+	bank = inw(ioaddr + BANK_SELECT);
+	if ((bank & 0xFF00) != 0x3300) {
+		return -1;
+	}
+	/* The above MIGHT indicate a device, but I need to write to further
+	 *   test this.  */
+	_outw(0x0, ioaddr + BANK_SELECT);
+	bank = inw(ioaddr + BANK_SELECT);
+	if ((bank & 0xFF00) != 0x3300) {
+		return -1;
+	}
 
-   /* well, we've already written once, so hopefully another time won't
-    *  hurt.  This time, I need to switch the bank register to bank 1,
-    *  so I can access the base address register */
-   SMC_SELECT_BANK(ioaddr, 1);
-   base_address_register = inw(ioaddr + BASE);
+	/* well, we've already written once, so hopefully another time won't
+	 *  hurt.  This time, I need to switch the bank register to bank 1,
+	 *  so I can access the base address register */
+	SMC_SELECT_BANK(ioaddr, 1);
+	base_address_register = inw(ioaddr + BASE);
 
-   if (ioaddr != (base_address_register >> 3 & 0x3E0))  {
+	if (ioaddr != (base_address_register >> 3 & 0x3E0)) {
 #ifdef	SMC9000_VERBOSE
-      printf("SMC9000: IOADDR %x doesn't match configuration (%x)."
-	     "Probably not a SMC chip\n",
-	     ioaddr, base_address_register >> 3 & 0x3E0);
+		printf("SMC9000: IOADDR %x doesn't match configuration (%x)."
+		       "Probably not a SMC chip\n",
+		       ioaddr, base_address_register >> 3 & 0x3E0);
 #endif
-      /* well, the base address register didn't match.  Must not have
-       * been a SMC chip after all. */
-      return -1;
-   }
+		/* well, the base address register didn't match.  Must not have
+		 * been a SMC chip after all. */
+		return -1;
+	}
 
-
-   /* check if the revision register is something that I recognize.
-    * These might need to be added to later, as future revisions
-    * could be added.  */
-   SMC_SELECT_BANK(ioaddr, 3);
-   revision_register  = inw(ioaddr + REVISION);
-   if (!chip_ids[(revision_register >> 4) & 0xF]) {
-      /* I don't recognize this chip, so... */
+	/* check if the revision register is something that I recognize.
+	 * These might need to be added to later, as future revisions
+	 * could be added.  */
+	SMC_SELECT_BANK(ioaddr, 3);
+	revision_register = inw(ioaddr + REVISION);
+	if (!chip_ids[(revision_register >> 4) & 0xF]) {
+		/* I don't recognize this chip, so... */
 #ifdef	SMC9000_VERBOSE
-      printf("SMC9000: IO %x: Unrecognized revision register:"
-	     " %x, Contact author.\n", ioaddr, revision_register);
+		printf("SMC9000: IO %x: Unrecognized revision register:"
+		       " %x, Contact author.\n", ioaddr, revision_register);
 #endif
-      return -1;
-   }
+		return -1;
+	}
 
-   /* at this point I'll assume that the chip is an SMC9xxx.
-    * It might be prudent to check a listing of MAC addresses
-    * against the hardware address, or do some other tests. */
-   return 0;
+	/* at this point I'll assume that the chip is an SMC9xxx.
+	 * It might be prudent to check a listing of MAC addresses
+	 * against the hardware address, or do some other tests. */
+	return 0;
 }
-
 
 /**************************************************************************
  * ETH_RESET - Reset adapter
@@ -357,160 +382,164 @@ static int smc_probe( int ioaddr )
 
 static void smc9000_reset(struct nic *nic)
 {
-   smc_reset(smc9000_base);
+	smc_reset(smc9000_base);
 }
 
 /**************************************************************************
  * ETH_TRANSMIT - Transmit a frame
  ***************************************************************************/
-static void smc9000_transmit(
-	struct nic *nic,
-	const char *d,			/* Destination */
-	unsigned int t,			/* Type */
-	unsigned int s,			/* size */
-	const char *p)			/* Packet */
-{
-   word length; /* real, length incl. header */
-   word numPages;
-   unsigned long time_out;
-   byte	packet_no;
-   word status;
-   int i;
+static void smc9000_transmit(struct nic *nic, const char *d,	/* Destination */
+			     unsigned int t,	/* Type */
+			     unsigned int s,	/* size */
+			     const char *p)
+{				/* Packet */
+	word length;		/* real, length incl. header */
+	word numPages;
+	unsigned long time_out;
+	byte packet_no;
+	word status;
+	int i;
 
-   /* We dont pad here since we can have the hardware doing it for us */
-   length = (s + ETHER_HDR_SIZE + 1)&~1;
+	/* We dont pad here since we can have the hardware doing it for us */
+	length = (s + ETHER_HDR_SIZE + 1) & ~1;
 
-   /* convert to MMU pages */
-   numPages = length / 256;
+	/* convert to MMU pages */
+	numPages = length / 256;
 
-   if (numPages > 7 ) {
+	if (numPages > 7) {
 #ifdef	SMC9000_VERBOSE
-      printf("SMC9000: Far too big packet error. \n");
+		printf("SMC9000: Far too big packet error. \n");
 #endif
-      return;
-   }
+		return;
+	}
 
-   SMC_SELECT_BANK(smc9000_base, 0);
-   _outw(TCR_NORMAL, smc9000_base + TCR);
+	SMC_SELECT_BANK(smc9000_base, 0);
+	_outw(TCR_NORMAL, smc9000_base + TCR);
 
-   /* dont try more than, say 30 times */
-   for (i=0;i<30;i++) {
-      /* now, try to allocate the memory */
-      SMC_SELECT_BANK(smc9000_base, 2);
-      _outw(MC_ALLOC | numPages, smc9000_base + MMU_CMD);
+	/* dont try more than, say 30 times */
+	for (i = 0; i < 30; i++) {
+		/* now, try to allocate the memory */
+		SMC_SELECT_BANK(smc9000_base, 2);
+		_outw(MC_ALLOC | numPages, smc9000_base + MMU_CMD);
 
-      status = 0;
-      /* wait for the memory allocation to finnish */
-      for (time_out = currticks() + 5*TICKS_PER_SEC; currticks() < time_out; ) {
-//	 status = inb(smc9000_base + INTERRUPT);
-	 status = inw(smc9000_base + INTERRUPT);
-	 if ( status & IM_ALLOC_INT ) {
-	    /* acknowledge the interrupt */
-//	    _outb(IM_ALLOC_INT, smc9000_base + INTERRUPT);
-	    _outw((status&0xff00)|IM_ALLOC_INT, smc9000_base + INTERRUPT);
-	    break;
-	 }
-      }
+		status = 0;
+		/* wait for the memory allocation to finnish */
+		for (time_out = currticks() + 5 * TICKS_PER_SEC;
+		     currticks() < time_out;) {
+//       status = inb(smc9000_base + INTERRUPT);
+			status = inw(smc9000_base + INTERRUPT);
+			if (status & IM_ALLOC_INT) {
+				/* acknowledge the interrupt */
+//          _outb(IM_ALLOC_INT, smc9000_base + INTERRUPT);
+				_outw((status & 0xff00) | IM_ALLOC_INT,
+				      smc9000_base + INTERRUPT);
+				break;
+			}
+		}
 
-      if ((status & IM_ALLOC_INT) != 0 ) {
-	 /* We've got the memory */
-	 break;
-      } else {
-	 printf("SMC9000: Memory allocation timed out, resetting MMU.\n");
-	 _outw(MC_RESET, smc9000_base + MMU_CMD);
-      }
-   }
+		if ((status & IM_ALLOC_INT) != 0) {
+			/* We've got the memory */
+			break;
+		} else {
+			printf
+			    ("SMC9000: Memory allocation timed out, resetting MMU.\n");
+			_outw(MC_RESET, smc9000_base + MMU_CMD);
+		}
+	}
 
-   /* If I get here, I _know_ there is a packet slot waiting for me */
-   packet_no = inb(smc9000_base + PNR_ARR + 1);
-   if (packet_no & 0x80) {
-      /* or isn't there?  BAD CHIP! */
-      printf("SMC9000: Memory allocation failed. \n");
-      return;
-   }
+	/* If I get here, I _know_ there is a packet slot waiting for me */
+	packet_no = inb(smc9000_base + PNR_ARR + 1);
+	if (packet_no & 0x80) {
+		/* or isn't there?  BAD CHIP! */
+		printf("SMC9000: Memory allocation failed. \n");
+		return;
+	}
 
-   /* we have a packet address, so tell the card to use it */
-   _outb(packet_no, smc9000_base + PNR_ARR);
+	/* we have a packet address, so tell the card to use it */
+	_outb(packet_no, smc9000_base + PNR_ARR);
 
-   /* point to the beginning of the packet */
-   _outw(PTR_AUTOINC, smc9000_base + POINTER);
+	/* point to the beginning of the packet */
+	_outw(PTR_AUTOINC, smc9000_base + POINTER);
 
 #if	SMC9000_DEBUG > 2
-   printf("Trying to xmit packet of length %x\n", length );
+	printf("Trying to xmit packet of length %x\n", length);
 #endif
 
-   /* send the packet length ( +6 for status, length and ctl byte )
-    * and the status word ( set to zeros ) */
-   _outw(0, smc9000_base + DATA_1 );
+	/* send the packet length ( +6 for status, length and ctl byte )
+	 * and the status word ( set to zeros ) */
+	_outw(0, smc9000_base + DATA_1);
 
-   /* send the packet length ( +6 for status words, length, and ctl) */
+	/* send the packet length ( +6 for status words, length, and ctl) */
 //   _outb((length+6) & 0xFF,  smc9000_base + DATA_1);
 //   _outb((length+6) >> 8 ,   smc9000_base + DATA_1);
-   _outw(length+6, smc9000_base + DATA_1);
+	_outw(length + 6, smc9000_base + DATA_1);
 
-   /* Write the contents of the packet */
+	/* Write the contents of the packet */
 
-   /* The ethernet header first... */
-   outsw(smc9000_base + DATA_1, d, ETHER_ADDR_SIZE >> 1);
-   outsw(smc9000_base + DATA_1, nic->node_addr, ETHER_ADDR_SIZE >> 1);
-   _outw(htons(t), smc9000_base + DATA_1);
+	/* The ethernet header first... */
+	outsw(smc9000_base + DATA_1, d, ETHER_ADDR_SIZE >> 1);
+	outsw(smc9000_base + DATA_1, nic->node_addr, ETHER_ADDR_SIZE >> 1);
+	_outw(htons(t), smc9000_base + DATA_1);
 
-   /* ... the data ... */
-   outsw(smc9000_base + DATA_1 , p, s >> 1);
+	/* ... the data ... */
+	outsw(smc9000_base + DATA_1, p, s >> 1);
 
-   /* ... and the last byte, if there is one.   */
-   if ((s & 1) == 0) {
-      _outw(0, smc9000_base + DATA_1);
-   } else {
+	/* ... and the last byte, if there is one.   */
+	if ((s & 1) == 0) {
+		_outw(0, smc9000_base + DATA_1);
+	} else {
 //      _outb(p[s-1], smc9000_base + DATA_1);
 //      _outb(0x20, smc9000_base + DATA_1);
-      _outw(0x2000+p[s-1], smc9000_base + DATA_1);
-   }
+		_outw(0x2000 + p[s - 1], smc9000_base + DATA_1);
+	}
 
-   /* and let the chipset deal with it */
-   _outw(MC_ENQUEUE , smc9000_base + MMU_CMD);
+	/* and let the chipset deal with it */
+	_outw(MC_ENQUEUE, smc9000_base + MMU_CMD);
 
-   status = 0; time_out = currticks() + 5*TICKS_PER_SEC;
-   do {
-      status = inb(smc9000_base + INTERRUPT);
+	status = 0;
+	time_out = currticks() + 5 * TICKS_PER_SEC;
+	do {
+		status = inb(smc9000_base + INTERRUPT);
 
-      if ((status & IM_TX_INT ) != 0) {
-	 word tx_status;
+		if ((status & IM_TX_INT) != 0) {
+			word tx_status;
 
-	 /* ack interrupt */
-	 _outb(IM_TX_INT, smc9000_base + INTERRUPT);
+			/* ack interrupt */
+			_outb(IM_TX_INT, smc9000_base + INTERRUPT);
 
-	 packet_no = inw(smc9000_base + FIFO_PORTS);
-	 packet_no &= 0x7F;
+			packet_no = inw(smc9000_base + FIFO_PORTS);
+			packet_no &= 0x7F;
 
-	 /* select this as the packet to read from */
-	 _outb( packet_no, smc9000_base + PNR_ARR );
+			/* select this as the packet to read from */
+			_outb(packet_no, smc9000_base + PNR_ARR);
 
-	 /* read the first word from this packet */
-	 _outw( PTR_AUTOINC | PTR_READ, smc9000_base + POINTER );
+			/* read the first word from this packet */
+			_outw(PTR_AUTOINC | PTR_READ, smc9000_base + POINTER);
 
-	 tx_status = inw( smc9000_base + DATA_1 );
+			tx_status = inw(smc9000_base + DATA_1);
 
-	 if (0 == (tx_status & TS_SUCCESS)) {
+			if (0 == (tx_status & TS_SUCCESS)) {
 #ifdef	SMC9000_VERBOSE
-	    printf("SMC9000: TX FAIL STATUS: %x \n", tx_status);
+				printf("SMC9000: TX FAIL STATUS: %x \n",
+				       tx_status);
 #endif
-	    /* re-enable transmit */
-	    SMC_SELECT_BANK(smc9000_base, 0);
-	    _outw(inw(smc9000_base + TCR ) | TCR_ENABLE, smc9000_base + TCR );
-	 }
+				/* re-enable transmit */
+				SMC_SELECT_BANK(smc9000_base, 0);
+				_outw(inw(smc9000_base + TCR) | TCR_ENABLE,
+				      smc9000_base + TCR);
+			}
 
-	 /* kill the packet */
-	 SMC_SELECT_BANK(smc9000_base, 2);
-	 _outw(MC_FREEPKT, smc9000_base + MMU_CMD);
+			/* kill the packet */
+			SMC_SELECT_BANK(smc9000_base, 2);
+			_outw(MC_FREEPKT, smc9000_base + MMU_CMD);
 
-	 return;
-      }
-   }while(currticks() < time_out);
+			return;
+		}
+	} while (currticks() < time_out);
 
-   printf("SMC9000: Waring TX timed out, resetting board\n");
-   smc_reset(smc9000_base);
-   return;
+	printf("SMC9000: Waring TX timed out, resetting board\n");
+	smc_reset(smc9000_base);
+	return;
 }
 
 /**************************************************************************
@@ -518,57 +547,58 @@ static void smc9000_transmit(
  ***************************************************************************/
 static int smc9000_poll(struct nic *nic)
 {
-   if(!smc9000_base)
-     return 0;
+	if (!smc9000_base)
+		return 0;
 
-   SMC_SELECT_BANK(smc9000_base, 2);
-   if (inw(smc9000_base + FIFO_PORTS) & FP_RXEMPTY)
-     return 0;
+	SMC_SELECT_BANK(smc9000_base, 2);
+	if (inw(smc9000_base + FIFO_PORTS) & FP_RXEMPTY)
+		return 0;
 
-   /*  start reading from the start of the packet */
-   _outw(PTR_READ | PTR_RCV | PTR_AUTOINC, smc9000_base + POINTER);
+	/*  start reading from the start of the packet */
+	_outw(PTR_READ | PTR_RCV | PTR_AUTOINC, smc9000_base + POINTER);
 
-   /* First read the status and check that we're ok */
-   if (!(inw(smc9000_base + DATA_1) & RS_ERRORS)) {
-      /* Next: read the packet length and mask off the top bits */
-      nic->packetlen = (inw(smc9000_base + DATA_1) & 0x07ff);
+	/* First read the status and check that we're ok */
+	if (!(inw(smc9000_base + DATA_1) & RS_ERRORS)) {
+		/* Next: read the packet length and mask off the top bits */
+		nic->packetlen = (inw(smc9000_base + DATA_1) & 0x07ff);
 
-      /* the packet length includes the 3 extra words */
-      nic->packetlen -= 6;
+		/* the packet length includes the 3 extra words */
+		nic->packetlen -= 6;
 #if	SMC9000_DEBUG > 2
-      printf(" Reading %d words (and %d byte(s))\n",
-	       (nic->packetlen >> 1), nic->packetlen & 1);
+		printf(" Reading %d words (and %d byte(s))\n",
+		       (nic->packetlen >> 1), nic->packetlen & 1);
 #endif
-      /* read the packet (and the last "extra" word) */
-      insw(smc9000_base + DATA_1, nic->packet, (nic->packetlen+2) >> 1);
-      /* is there an odd last byte ? */
-      if (nic->packet[nic->packetlen+1] & 0x20)
-	 nic->packetlen++;
+		/* read the packet (and the last "extra" word) */
+		insw(smc9000_base + DATA_1, nic->packet,
+		     (nic->packetlen + 2) >> 1);
+		/* is there an odd last byte ? */
+		if (nic->packet[nic->packetlen + 1] & 0x20)
+			nic->packetlen++;
 
-      /*  error or good, tell the card to get rid of this packet */
-      _outw(MC_RELEASE, smc9000_base + MMU_CMD);
-      return 1;
-   }
+		/*  error or good, tell the card to get rid of this packet */
+		_outw(MC_RELEASE, smc9000_base + MMU_CMD);
+		return 1;
+	}
 
-   printf("SMC9000: RX error\n");
-   /*  error or good, tell the card to get rid of this packet */
-   _outw(MC_RELEASE, smc9000_base + MMU_CMD);
-   return 0;
+	printf("SMC9000: RX error\n");
+	/*  error or good, tell the card to get rid of this packet */
+	_outw(MC_RELEASE, smc9000_base + MMU_CMD);
+	return 0;
 }
 
 static void smc9000_disable(struct nic *nic)
 {
-   if(!smc9000_base)
-     return;
+	if (!smc9000_base)
+		return;
 
-   /* no more interrupts for me */
-   SMC_SELECT_BANK(smc9000_base, 2);
-   _outb( 0, smc9000_base + INT_MASK);
+	/* no more interrupts for me */
+	SMC_SELECT_BANK(smc9000_base, 2);
+	_outb(0, smc9000_base + INT_MASK);
 
-   /* and tell the card to stay away from that nasty outside world */
-   SMC_SELECT_BANK(smc9000_base, 0);
-   _outb( RCR_CLEAR, smc9000_base + RCR );
-   _outb( TCR_CLEAR, smc9000_base + TCR );
+	/* and tell the card to stay away from that nasty outside world */
+	SMC_SELECT_BANK(smc9000_base, 0);
+	_outb(RCR_CLEAR, smc9000_base + RCR);
+	_outb(TCR_CLEAR, smc9000_base + TCR);
 }
 
 /**************************************************************************
@@ -577,144 +607,140 @@ static void smc9000_disable(struct nic *nic)
 
 struct nic *smc9000_probe(struct nic *nic, unsigned short *probe_addrs)
 {
-   unsigned short   revision;
-   int	            memory;
-   int              media;
-   const char *	    version_string;
-   const char *	    if_string;
-   int              i;
+	unsigned short revision;
+	int memory;
+	int media;
+	const char *version_string;
+	const char *if_string;
+	int i;
 
-   /*
-    * the SMC9000 can be at any of the following port addresses.  To change,
-    * for a slightly different card, you can add it to the array.  Keep in
-    * mind that the array must end in zero.
-    */
-   static const unsigned short portlist[] = {
+	/*
+	 * the SMC9000 can be at any of the following port addresses.  To change,
+	 * for a slightly different card, you can add it to the array.  Keep in
+	 * mind that the array must end in zero.
+	 */
+	static const unsigned short portlist[] = {
 #ifdef	SMC9000_SCAN
-      SMC9000_SCAN,
+		SMC9000_SCAN,
 #else
-      0x200, 0x220, 0x240, 0x260, 0x280, 0x2A0, 0x2C0, 0x2E0,
-      0x300, 0x320, 0x340, 0x360, 0x380, 0x3A0, 0x3C0, 0x3E0,
+		0x200, 0x220, 0x240, 0x260, 0x280, 0x2A0, 0x2C0, 0x2E0,
+		0x300, 0x320, 0x340, 0x360, 0x380, 0x3A0, 0x3C0, 0x3E0,
 #endif
-      0 };
+		0
+	};
 
-   printf("\nSMC9000 %s\n", smc9000_version);
+	printf("\nSMC9000 %s\n", smc9000_version);
 #ifdef	SMC9000_VERBOSE
-   printf("Copyright (C) 1998 Daniel Engstr\x94m\n");
-   printf("Copyright (C) 1996 Eric Stahlman\n");
+	printf("Copyright (C) 1998 Daniel Engstr\x94m\n");
+	printf("Copyright (C) 1996 Eric Stahlman\n");
 #endif
-   /* if no addresses supplied, fall back on defaults */
-   if (probe_addrs == 0 || probe_addrs[0] == 0)
-     probe_addrs = portlist;
+	/* if no addresses supplied, fall back on defaults */
+	if (probe_addrs == 0 || probe_addrs[0] == 0)
+		probe_addrs = portlist;
 
-   /* check every ethernet address */
-   for (i = 0; probe_addrs[i]; i++) {
-      /* check this specific address */
-      if (smc_probe(probe_addrs[i]) == 0)
-	smc9000_base = probe_addrs[i];
-   }
+	/* check every ethernet address */
+	for (i = 0; probe_addrs[i]; i++) {
+		/* check this specific address */
+		if (smc_probe(probe_addrs[i]) == 0)
+			smc9000_base = probe_addrs[i];
+	}
 
-   /* couldn't find anything */
-   if(0 == smc9000_base)
-     goto out;
+	/* couldn't find anything */
+	if (0 == smc9000_base)
+		goto out;
 
-   /*
-    * Get the MAC address ( bank 1, regs 4 - 9 )
-    */
-   SMC_SELECT_BANK(smc9000_base, 1);
+	/*
+	 * Get the MAC address ( bank 1, regs 4 - 9 )
+	 */
+	SMC_SELECT_BANK(smc9000_base, 1);
 
-   for ( i = 0; i < 6; i += 2 ) {
-      word address;
+	for (i = 0; i < 6; i += 2) {
+		word address;
 
-      address = inw(smc9000_base + ADDR0 + i);
-      nic->node_addr[i+1] = address >> 8;
-      nic->node_addr[i] = address & 0xFF;
-   }
+		address = inw(smc9000_base + ADDR0 + i);
+		nic->node_addr[i + 1] = address >> 8;
+		nic->node_addr[i] = address & 0xFF;
+	}
 
-   /*
-    * Now, I want to find out more about the chip.  This is sort of
-    * redundant, but it's cleaner to have it in both, rather than having
-    * one VERY long probe procedure.
-    */
-   SMC_SELECT_BANK(smc9000_base, 3);
-   revision  = inw(smc9000_base + REVISION);
-   version_string = chip_ids[(revision >> 4) & 0xF];
+	/*
+	 * Now, I want to find out more about the chip.  This is sort of
+	 * redundant, but it's cleaner to have it in both, rather than having
+	 * one VERY long probe procedure.
+	 */
+	SMC_SELECT_BANK(smc9000_base, 3);
+	revision = inw(smc9000_base + REVISION);
+	version_string = chip_ids[(revision >> 4) & 0xF];
 
-   if (((revision & 0xF0) >> 4 == CHIP_9196) &&
-       ((revision & 0x0F) >= REV_9196)) {
-      /* This is a 91c96. 'c96 has the same chip id as 'c94 (4) but
-       * a revision starting at 6 */
-      version_string = smc91c96_id;
-   }
+	if (((revision & 0xF0) >> 4 == CHIP_9196) &&
+	    ((revision & 0x0F) >= REV_9196)) {
+		/* This is a 91c96. 'c96 has the same chip id as 'c94 (4) but
+		 * a revision starting at 6 */
+		version_string = smc91c96_id;
+	}
 
-   if ( !version_string ) {
-      /* I shouldn't get here because this call was done before.... */
-      goto out;
-   }
+	if (!version_string) {
+		/* I shouldn't get here because this call was done before.... */
+		goto out;
+	}
 
-   /* get the memory information */
-   SMC_SELECT_BANK(smc9000_base, 0);
-   memory = (inw(smc9000_base + MIR) & 0xFF);
-   if ((revision & 0xf0) >> 4 == CHIP_9111x)
-     memory *= 2048;
-   else
-     memory *= 256 * (( inw(smc9000_base + MCR) >> 9 )  & 0x7);  /* multiplier */
+	/* get the memory information */
+	SMC_SELECT_BANK(smc9000_base, 0);
+	memory = (inw(smc9000_base + MIR) & 0xFF);
+	if ((revision & 0xf0) >> 4 == CHIP_9111x)
+		memory *= 2048;
+	else
+		memory *= 256 * ((inw(smc9000_base + MCR) >> 9) & 0x7);	/* multiplier */
 
-   /* is it using AUI or 10BaseT ? */
-   SMC_SELECT_BANK(smc9000_base, 1);
-   if (inw(smc9000_base + CONFIG) & CFG_AUI_SELECT)
-     media = 2;
-   else
-     media = 1;
+	/* is it using AUI or 10BaseT ? */
+	SMC_SELECT_BANK(smc9000_base, 1);
+	if (inw(smc9000_base + CONFIG) & CFG_AUI_SELECT)
+		media = 2;
+	else
+		media = 1;
 
-   if_string = interfaces[media - 1];
+	if_string = interfaces[media - 1];
 
-   /* now, reset the chip, and put it into a known state */
-   smc_reset(smc9000_base);
+	/* now, reset the chip, and put it into a known state */
+	smc_reset(smc9000_base);
 
-   printf("%s rev:%d I/O port:%x Interface:%s RAM:%d bytes \n",
-	  version_string, revision & 0xF,
-	  smc9000_base, if_string, memory );
-   /*
-    * Print the Ethernet address
-    */
-   printf("Ethernet MAC address: ");
-   for (i = 0; i < 5; i++)
-     printf("%x:", nic->node_addr[i]);
-   printf("%x\n", nic->node_addr[5]);
+	printf("%s rev:%d I/O port:%x Interface:%s RAM:%d bytes \n",
+	       version_string, revision & 0xF, smc9000_base, if_string, memory);
+	/*
+	 * Print the Ethernet address
+	 */
+	printf("Ethernet MAC address: ");
+	for (i = 0; i < 5; i++)
+		printf("%x:", nic->node_addr[i]);
+	printf("%x\n", nic->node_addr[5]);
 
-   SMC_SELECT_BANK(smc9000_base, 0);
+	SMC_SELECT_BANK(smc9000_base, 0);
 
-   /* see the header file for options in TCR/RCR NORMAL*/
-   _outw(TCR_NORMAL, smc9000_base + TCR);
-   _outw(RCR_NORMAL, smc9000_base + RCR);
+	/* see the header file for options in TCR/RCR NORMAL */
+	_outw(TCR_NORMAL, smc9000_base + TCR);
+	_outw(RCR_NORMAL, smc9000_base + RCR);
 
-   /* Select which interface to use */
-   SMC_SELECT_BANK(smc9000_base, 1);
-   if ( media == 1 ) {
-      _outw( inw( smc9000_base + CONFIG ) & ~CFG_AUI_SELECT,
-	   smc9000_base + CONFIG );
-   }
-   else if ( media == 2 ) {
-      _outw( inw( smc9000_base + CONFIG ) | CFG_AUI_SELECT,
-	   smc9000_base + CONFIG );
-   }
+	/* Select which interface to use */
+	SMC_SELECT_BANK(smc9000_base, 1);
+	if (media == 1) {
+		_outw(inw(smc9000_base + CONFIG) & ~CFG_AUI_SELECT,
+		      smc9000_base + CONFIG);
+	} else if (media == 2) {
+		_outw(inw(smc9000_base + CONFIG) | CFG_AUI_SELECT,
+		      smc9000_base + CONFIG);
+	}
 
-   nic->reset = smc9000_reset;
-   nic->poll = smc9000_poll;
-   nic->transmit = smc9000_transmit;
-   nic->disable = smc9000_disable;
+	nic->reset = smc9000_reset;
+	nic->poll = smc9000_poll;
+	nic->transmit = smc9000_transmit;
+	nic->disable = smc9000_disable;
 
-   return nic;
+	return nic;
 
-out:
+      out:
 #ifdef	SMC9000_VERBOSE
-   printf("No SMC9000 adapters found\n");
+	printf("No SMC9000 adapters found\n");
 #endif
-   smc9000_base = 0;
+	smc9000_base = 0;
 
-   return (0);
+	return (0);
 }
-
-
-

@@ -4,3 +4,10 @@ CONFIG_SESH4=y
 CONFIG_ETHERNET=y
 CONFIG_CPU_SUBTYPE_SH7751=y
 CONFIG_PCI=y
+CONFIG_PCNET32=y
+CONFIG_ADJUST_VMA=0x0
+### automatically imported from "config.h" file
+include config/config.mk-sesh4-7751-eth
+
+CONFIG_CPU_SUBTYPE_SH_R=y
+CONFIG_PCLK_FREQ=60000000

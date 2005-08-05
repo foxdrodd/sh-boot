@@ -14,13 +14,8 @@
 
 #define STRINGIFY(X) #X
 #define SYMBOL_NAME_STR(X) STRINGIFY(SYMBOL_NAME(X))
-#ifdef __STDC__
-#define SYMBOL_NAME(X) ##X
-#define SYMBOL_NAME_LABEL(X) ##X##:
-#else
 #define SYMBOL_NAME(X) X
 #define SYMBOL_NAME_LABEL(X) X/**/:
-#endif
 
 #define __ALIGN .balign 4
 #define __ALIGN_STR ".balign 4"

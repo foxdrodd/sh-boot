@@ -28,68 +28,61 @@
 #define STOP_PG		128	/* Last page +1 of RX ring */
 #endif
 
-static inline volatile unsigned short *
-port2adr(unsigned short port)
+static inline volatile unsigned short *port2adr(unsigned short port)
 {
-  if (port <= 0x0010)
-    return (volatile unsigned short *) (PA_83902 + (port << 1));
-  else if (port == 0x1000)
-    return (volatile unsigned short *) PA_83902_IF;
-  else if (port == 0x2000)
-    return (volatile unsigned short *) PA_83902_RST;
+	if (port <= 0x0010)
+		return (volatile unsigned short *)(PA_83902 + (port << 1));
+	else if (port == 0x1000)
+		return (volatile unsigned short *)PA_83902_IF;
+	else if (port == 0x2000)
+		return (volatile unsigned short *)PA_83902_RST;
 
-  /* Just in case... */
-  return 0;
+	/* Just in case... */
+	return 0;
 }
 
-static void
-delay (void)
+static void delay(void)
 {
-  volatile unsigned short *a=(volatile unsigned short *)0xa0000000;
-  unsigned short w;
+	volatile unsigned short *a = (volatile unsigned short *)0xa0000000;
+	unsigned short w;
 
-  w = *a;
-  asm volatile ("" : : : "memory" );
-  w = *a;
-  asm volatile ("" : : : "memory" );
-  w = *a;
+	w = *a;
+	asm volatile ("":::"memory");
+	w = *a;
+	asm volatile ("":::"memory");
+	w = *a;
 }
 
-static inline unsigned long
-inb (unsigned short port)
+static inline unsigned long inb(unsigned short port)
 {
-  unsigned long v = (*port2adr(port) >> 8);
-  delay ();
-  return v;
+	unsigned long v = (*port2adr(port) >> 8);
+	delay();
+	return v;
 }
 
-static inline void
-outb (unsigned long value, unsigned short port)
+static inline void outb(unsigned long value, unsigned short port)
 {
-  *port2adr(port) = value << 8;
-  delay ();
+	*port2adr(port) = value << 8;
+	delay();
 }
 
-static inline unsigned long 
-inw (unsigned short port)
+static inline unsigned long inw(unsigned short port)
 {
-  unsigned long v = *port2adr(port);
-  delay ();
-  return v;
+	unsigned long v = *port2adr(port);
+	delay();
+	return v;
 }
 
-static inline void
-outw (unsigned long value, unsigned short port)
+static inline void outw(unsigned long value, unsigned short port)
 {
-  *port2adr(port) = value;
-  delay ();
+	*port2adr(port) = value;
+	delay();
 }
 
-static inline void
-nic_reset (void)
+static inline void nic_reset(void)
 {
-  outw (0, D83902A_RESET);
-  sleep128 (1);
-  outw (0xffff, D83902A_RESET);
-  sleep128 (1);
+	outw(0, D83902A_RESET);
+	sleep128(1);
+	outw(0xffff, D83902A_RESET);
+	sleep128(1);
 }

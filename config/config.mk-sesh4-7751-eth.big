@@ -1,6 +1,11 @@
-# CONFIG_LITTLE_ENDIAN is not set
 CONFIG_CPU_SH4=y
 CONFIG_SESH4=y
 CONFIG_ETHERNET=y
 CONFIG_CPU_SUBTYPE_SH7751=y
 CONFIG_PCI=y
+CONFIG_PCNET32=y
+CONFIG_ADJUST_VMA=0x0
+### automatically imported from "config.h" file
+include config/config.mk-sesh4-7751-eth
+
+CONFIG_LITTLE_ENDIAN=n

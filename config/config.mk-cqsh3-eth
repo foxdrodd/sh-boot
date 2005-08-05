@@ -3,3 +3,12 @@ CONFIG_CPU_SH3=y
 CONFIG_CQSH3=y
 CONFIG_ETHERNET=y
 CONFIG_IDE=y
+CONFIG_NE2000=y
+CONFIG_ADJUST_VMA=0x60000000
+### automatically imported from "config.h" file
+include config/config.mk-cqsh3
+
+CONFIG_IDE=y
+CONFIG_ETHERNET=y
+CONFIG_DIRECT_COMPACT_FLASH=y
+CONFIG_NE2000=y

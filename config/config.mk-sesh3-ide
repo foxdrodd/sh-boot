@@ -2,3 +2,7 @@ CONFIG_LITTLE_ENDIAN=y
 CONFIG_CPU_SH3=y
 CONFIG_SESH3=y
 CONFIG_IDE=y
+### automatically imported from "config.h" file
+include config/config.mk-sesh3
+
+CONFIG_IDE=y

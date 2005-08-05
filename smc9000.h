@@ -32,9 +32,9 @@
 # define _SMC9000_H_
 
 /* I want some simple types */
-typedef unsigned char			byte;
-typedef unsigned short			word;
-typedef unsigned long int		dword;
+typedef unsigned char byte;
+typedef unsigned short word;
+typedef unsigned long int dword;
 
 /*---------------------------------------------------------------
  *
@@ -71,7 +71,6 @@ typedef unsigned long int		dword;
 /* the normal settings for the TCR register : */
 #define	TCR_NORMAL	(TCR_ENABLE | TCR_PAD_ENABLE)
 
-
 #define EPH_STATUS	2
 #define ES_LINK_OK	0x4000	/* is the link integrity ok ? */
 
@@ -84,7 +83,7 @@ typedef unsigned long int		dword;
 
 /* the normal settings for the RCR register : */
 #define	RCR_NORMAL	(RCR_STRIP_CRC | RCR_ENABLE)
-#define RCR_CLEAR	0x0		/* set it to a base state */
+#define RCR_CLEAR	0x0	/* set it to a base state */
 
 #define	COUNTER		6
 #define	MIR		8
@@ -105,7 +104,7 @@ typedef unsigned long int		dword;
 #define	CTL_CR_ENABLE		0x40
 #define	CTL_TE_ENABLE		0x0020
 #define CTL_AUTO_RELEASE	0x0800
-#define	CTL_EPROM_ACCESS	0x0003 /* high if Eprom is being read */
+#define	CTL_EPROM_ACCESS	0x0003	/* high if Eprom is being read */
 
 /* BANK 2 */
 #define MMU_CMD		0
@@ -141,7 +140,7 @@ typedef unsigned long int		dword;
 #define	IM_ALLOC_INT	0x8
 #define	IM_RX_OVRN_INT	0x10
 #define	IM_EPH_INT	0x20
-#define	IM_ERCV_INT	0x40 /* not on SMC9192 */
+#define	IM_ERCV_INT	0x40	/* not on SMC9192 */
 
 /* BANK 3 */
 #define	MULTICAST1	0
@@ -149,8 +148,7 @@ typedef unsigned long int		dword;
 #define	MULTICAST3	4
 #define	MULTICAST4	6
 #define	MGMT		8
-#define	REVISION	10 /* ( hi: chip id   low: rev # ) */
-
+#define	REVISION	10	/* ( hi: chip id   low: rev # ) */
 
 /* this is NOT on SMC9192 */
 #define	ERCV		12
@@ -186,7 +184,6 @@ typedef unsigned long int		dword;
 #define RS_MULTICAST	0x0001
 #define RS_ERRORS	(RS_ALGNERR | RS_BADCRC | RS_TOOLONG | RS_TOOSHORT)
 
-
 /*-------------------------------------------------------------------------
  *  I define some macros to make it easier to do somewhat common
  * or slightly complicated, repeated tasks.
@@ -201,6 +198,4 @@ typedef unsigned long int		dword;
 			inw( x + RCR );\
 			inw( x + RCR ); }
 
-
-#endif	/* _SMC_9000_H_ */
-
+#endif				/* _SMC_9000_H_ */

@@ -1,3 +1,0 @@
-#include "config/config.h-sesh4"
-
-#define CONFIG_CPU_SUBTYPE_SH7751	1

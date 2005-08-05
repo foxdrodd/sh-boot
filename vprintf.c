@@ -26,10 +26,10 @@ __res; })
 
 static int skip_atoi(const char **s)
 {
-	int i=0;
+	int i = 0;
 
 	while (isdigit(**s))
-		i = i*10 + *((*s)++) - '0';
+		i = i * 10 + *((*s)++) - '0';
 	return i;
 }
 
@@ -45,7 +45,7 @@ int putchar(char ch)
 {
 	extern void putDebugChar(char ch);
 
-	if(ch == '\n')
+	if (ch == '\n')
 		putDebugChar('\r');
 	putDebugChar(ch);
 	return (unsigned char)ch;
@@ -53,14 +53,15 @@ int putchar(char ch)
 
 int puts(const char *s)
 {
-	while(*s) putchar(*s++);
+	while (*s)
+		putchar(*s++);
 	return 0;
 }
 
 static int number(long long num, int base, int size, int precision, int type)
 {
-	char c,sign,tmp[16];
-	const char *digits="0123456789abcdefghijklmnopqrstuvwxyz";
+	char c, sign, tmp[16];
+	const char *digits = "0123456789abcdefghijklmnopqrstuvwxyz";
 	int i, n = 0;
 
 	if (type & LARGE)
@@ -92,47 +93,47 @@ static int number(long long num, int base, int size, int precision, int type)
 	}
 	i = 0;
 	if (num == 0)
-		tmp[i++]='0';
-	else while (num != 0)
-		tmp[i++] = digits[do_div(num,base)];
+		tmp[i++] = '0';
+	else
+		while (num != 0)
+			tmp[i++] = digits[do_div(num, base)];
 	if (i > precision)
 		precision = i;
 	size -= precision;
-	if (!(type&(ZEROPAD+LEFT)))
-		while(size-->0) {
-			putchar (' ');
+	if (!(type & (ZEROPAD + LEFT)))
+		while (size-- > 0) {
+			putchar(' ');
 			n++;
 		}
 	if (sign) {
-		putchar (sign);
+		putchar(sign);
 		n++;
 	}
 	if (type & SPECIAL) {
-		if (base==8) {
-			putchar ('0');
+		if (base == 8) {
+			putchar('0');
 			n++;
-		}
-		else if (base==16) {
-			putchar ('0');
-			putchar (digits[33]);
+		} else if (base == 16) {
+			putchar('0');
+			putchar(digits[33]);
 			n += 2;
 		}
 	}
 	if (!(type & LEFT))
 		while (size-- > 0) {
-			putchar (c);
+			putchar(c);
 			n++;
 		}
 	while (i < precision--) {
-		putchar ('0');
+		putchar('0');
 		n++;
 	}
 	while (i-- > 0) {
-		putchar (tmp[i]);
+		putchar(tmp[i]);
 		n++;
 	}
 	while (size-- > 0) {
-		putchar (' ');
+		putchar(' ');
 		n++;
 	}
 	return n;
@@ -159,29 +160,38 @@ int vprintf(const char *fmt, va_list args)
 	int precision;		/* min. # of digits for integers; max
 				   number of chars for from string */
 	int qualifier;		/* 'h', 'l', or 'L' for integer fields */
-	                        /* 'z' support added 23/7/1999 S.H.    */
-				/* 'z' changed to 'Z' --davidm 1/25/99 */
+	/* 'z' support added 23/7/1999 S.H.    */
+	/* 'z' changed to 'Z' --davidm 1/25/99 */
 
-	
-	for (n = 0 ; *fmt ; ++fmt) {
+	for (n = 0; *fmt; ++fmt) {
 		if (*fmt != '%') {
-			putchar (*fmt);
+			putchar(*fmt);
 			n++;
 			continue;
 		}
-			
+
 		/* process flags */
 		flags = 0;
-		repeat:
-			++fmt;		/* this also skips first '%' */
-			switch (*fmt) {
-				case '-': flags |= LEFT; goto repeat;
-				case '+': flags |= PLUS; goto repeat;
-				case ' ': flags |= SPACE; goto repeat;
-				case '#': flags |= SPECIAL; goto repeat;
-				case '0': flags |= ZEROPAD; goto repeat;
-				}
-		
+	      repeat:
+		++fmt;		/* this also skips first '%' */
+		switch (*fmt) {
+		case '-':
+			flags |= LEFT;
+			goto repeat;
+		case '+':
+			flags |= PLUS;
+			goto repeat;
+		case ' ':
+			flags |= SPACE;
+			goto repeat;
+		case '#':
+			flags |= SPECIAL;
+			goto repeat;
+		case '0':
+			flags |= ZEROPAD;
+			goto repeat;
+		}
+
 		/* get field width */
 		field_width = -1;
 		if (isdigit(*fmt))
@@ -199,7 +209,7 @@ int vprintf(const char *fmt, va_list args)
 		/* get the precision */
 		precision = -1;
 		if (*fmt == '.') {
-			++fmt;	
+			++fmt;
 			if (isdigit(*fmt))
 				precision = skip_atoi(&fmt);
 			else if (*fmt == '*') {
@@ -213,7 +223,7 @@ int vprintf(const char *fmt, va_list args)
 
 		/* get the conversion qualifier */
 		qualifier = -1;
-		if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L' || *fmt =='Z') {
+		if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L' || *fmt == 'Z') {
 			qualifier = *fmt;
 			++fmt;
 		}
@@ -225,13 +235,13 @@ int vprintf(const char *fmt, va_list args)
 		case 'c':
 			if (!(flags & LEFT))
 				while (--field_width > 0) {
-					putchar (' ');
+					putchar(' ');
 					n++;
 				}
-			putchar ((unsigned char) va_arg(args, int));
+			putchar((unsigned char)va_arg(args, int));
 			n++;
 			while (--field_width > 0) {
-				putchar (' ');
+				putchar(' ');
 				n++;
 			}
 			continue;
@@ -245,58 +255,59 @@ int vprintf(const char *fmt, va_list args)
 
 			if (!(flags & LEFT))
 				while (len < field_width--) {
-					putchar (' ');
+					putchar(' ');
 					n++;
 				}
 			for (i = 0; i < len; ++i) {
-				putchar (*s++);
+				putchar(*s++);
 				n++;
 			}
 			while (len < field_width--) {
-				putchar (' ');
+				putchar(' ');
 				n++;
 			}
 			continue;
 
 		case 'p':
 			if (field_width == -1) {
-				field_width = 2*sizeof(void *);
+				field_width = 2 * sizeof(void *);
 				flags |= ZEROPAD;
 			}
-			n += number((unsigned long) va_arg(args, void *), 16,
-				field_width, precision, flags);
+			n += number((unsigned long)va_arg(args, void *), 16,
+				    field_width, precision, flags);
 			continue;
 
 		case 'n':
 			if (qualifier == 'l') {
-				long * ip = va_arg(args, long *);
+				long *ip = va_arg(args, long *);
 				*ip = n;
 			} else if (qualifier == 'Z') {
-				size_t * ip = va_arg(args, size_t *);
+				size_t *ip = va_arg(args, size_t *);
 				*ip = n;
 			} else {
-				int * ip = va_arg(args, int *);
+				int *ip = va_arg(args, int *);
 				*ip = n;
 			}
 			continue;
 
 		case '%':
-			putchar ('%');
+			putchar('%');
 			n++;
 			continue;
 
 		case 'I':
 			{
 				union {
-					long		l;
-					unsigned char	c[4];
+					long l;
+					unsigned char c[4];
 				} u;
 				u.l = va_arg(args, long);
-				printf("%d.%d.%d.%d", u.c[0], u.c[1], u.c[2], u.c[3]);
+				printf("%d.%d.%d.%d", u.c[0], u.c[1], u.c[2],
+				       u.c[3]);
 			}
 			continue;
 
-		/* integer number formats - set up the flags and "break" */
+			/* integer number formats - set up the flags and "break" */
 		case 'o':
 			base = 8;
 			break;
@@ -314,13 +325,12 @@ int vprintf(const char *fmt, va_list args)
 			break;
 
 		default:
-			putchar ('%');
+			putchar('%');
 			n++;
 			if (*fmt) {
-				putchar (*fmt);
+				putchar(*fmt);
 				n++;
-			}
-			else
+			} else
 				--fmt;
 			continue;
 		}
@@ -329,17 +339,17 @@ int vprintf(const char *fmt, va_list args)
 		else if (qualifier == 'l') {
 			num = va_arg(args, unsigned long);
 			if (flags & SIGN)
-				num = (signed long) num;
+				num = (signed long)num;
 		} else if (qualifier == 'Z') {
 			num = va_arg(args, size_t);
 		} else if (qualifier == 'h') {
-			num = (unsigned short) va_arg(args, int);
+			num = (unsigned short)va_arg(args, int);
 			if (flags & SIGN)
-				num = (signed short) num;
+				num = (signed short)num;
 		} else {
 			num = va_arg(args, unsigned int);
 			if (flags & SIGN)
-				num = (signed int) num;
+				num = (signed int)num;
 		}
 		n += number(num, base, field_width, precision, flags);
 	}
@@ -357,7 +367,7 @@ int printf(const char *fmt, ...)
 	int i;
 
 	va_start(args, fmt);
-	i=vprintf(fmt,args);
+	i = vprintf(fmt, args);
 	va_end(args);
 	return i;
 }

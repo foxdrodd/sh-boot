@@ -1,3 +1,0 @@
-#include "config/config.h-sesh4-ide-eth"
-
-#undef  CONFIG_LITTLE_ENDIAN

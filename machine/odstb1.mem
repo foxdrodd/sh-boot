@@ -1,9 +1,0 @@
-MEMORY
-{
-	/* Use this value when running from RAM: */
-	ROM (rx):   ORIGIN = 0x0x83ff0000, LENGTH = 64k
-	/* And this one when booting from ROM: */
-	/* ROM (rx):   ORIGIN = 0xa0000000, LENGTH = 64k */
-	RAM (rw):   ORIGIN = 0x82000000, LENGTH = 2560
-	STACK (rw): ORIGIN = 0x82000a00, LENGTH = 1536
-}

@@ -1,3 +1,0 @@
-#include "config/config.h-sesh4-7751"
-
-#undef  CONFIG_LITTLE_ENDIAN

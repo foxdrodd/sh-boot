@@ -13,14 +13,23 @@
  */
 
 #include "config.h"
+#include "defs.h"
 #include "io.h"
+#include "init.h"
 
 #if (defined(CONFIG_SCI) || defined(CONFIG_SCIF))
 /* with serial-console */
 
 #if defined(CONFIG_SCI)
-#define SCSCR_INIT 	0x0030 /* TIE=0,RIE=0,TE=1,RE=1 */
-#if defined(CONFIG_CPU_SH3)
+#define SCSCR_INIT 	0x0030	/* TIE=0,RIE=0,TE=1,RE=1 */
+#if defined(CONFIG_CPU_SH2)
+#define SCSMR   (volatile unsigned char *)0xffff81b0
+#define SCBRR   0xffff81b1
+#define SCSCR   (volatile unsigned char *)0xffff81b2
+#define SC_TDR  0xffff81b3
+#define SC_SR   (volatile unsigned char *)0xffff81b4
+#define SC_RDR  0xffff81b5
+#elif defined(CONFIG_CPU_SH3)
 #define SCSMR  (volatile unsigned char *)0xfffffe80
 #define SCBRR  0xfffffe82
 #define SCSCR  (volatile unsigned char *)0xfffffe84
@@ -36,7 +45,7 @@
 #define SC_RDR	0xffe00014
 #endif
 #elif defined(CONFIG_SCIF)
-#define SCSCR_INIT 	0x0038 /* TIE=0,RIE=0,REIE=1,TE=1,RE=1 */
+#define SCSCR_INIT 	0x0038	/* TIE=0,RIE=0,REIE=1,TE=1,RE=1 */
 #if defined(CONFIG_CPU_SUBTYPE_SH7300)
 /* Pin function controller */
 /* SCIF */
@@ -91,15 +100,16 @@
 
 #define SCLSR  (SCIF_BASE + 0x24)
 
-#endif /* CONFIG_CPU_SH4 */
-#endif /* CONFIG_SCIF */
+#endif				/* CONFIG_CPU_SH4 */
+#endif				/* CONFIG_SCIF */
 
-#if defined(CONFIG_CPU_SUBTYPE_SH7300)
+#if defined(CONFIG_ARN44)
+#define BPS_SETTING_VALUE	22 /* 38400 bps */
+#elif defined(CONFIG_CPU_SUBTYPE_SH7300)
 #define BPS_SETTING_VALUE	(((CONFIG_PCLK_FREQ*1.0)/(16*CONFIG_BPS))-0.5)
 #else
 #define BPS_SETTING_VALUE	(((CONFIG_PCLK_FREQ*1.0)/(32*CONFIG_BPS))-0.5)
-#endif /* CONFIG_CPU_SUBTYPE_SH7300 */
-
+#endif				/* CONFIG_CPU_SUBTYPE_SH7300 */
 
 #if defined(CONFIG_SE09)
 #define SCSCR_CKE 3
@@ -154,201 +164,173 @@
 
 #define WAIT_RFCR_COUNTER	500
 
-void
-handleError (void)
+void handleError(void)
 {
-  p4_in(SC_SR);
-  p4_out(SC_SR, SCI_ERROR_CLEAR);
+	p4_in(SC_SR);
+	p4_out(SC_SR, SCI_ERROR_CLEAR);
 #if defined(CONFIG_SCIF) && defined(CONFIG_CPU_SH4)
-  p4_inw(SCLSR);
-  p4_outw(SCLSR, SCIF_ORERR_CLEAR);
+	p4_inw(SCLSR);
+	p4_outw(SCLSR, SCIF_ORERR_CLEAR);
 #endif
 }
 
-void
-init_serial(void)
+void __init init_serial(void)
 {
-  p4_out(SCSCR, 0x0000);	/* TE=0, RE=0, CKE1=0 */
+	p4_out(SCSCR, 0x0000);	/* TE=0, RE=0, CKE1=0 */
 #if defined(CONFIG_SCIF)
-  p4_out(SCFCR, 0x0006);	/* TFRST=1, RFRST=1 */
+	p4_out(SCFCR, 0x0006);	/* TFRST=1, RFRST=1 */
 #endif
-  p4_out(SCSCR, SCSCR_CKE);	/* TE=0, RE=0 */
-  p4_out(SCSMR, 0x0000);	/* CHR=0, PE=0, STOP=0, CKS=00 */
-  			/* 8-bit, non-parity, 1 stop bit, pf/1 clock */
+	p4_out(SCSCR, SCSCR_CKE);	/* TE=0, RE=0 */
+	p4_out(SCSMR, 0x0000);	/* CHR=0, PE=0, STOP=0, CKS=00 */
+	/* 8-bit, non-parity, 1 stop bit, pf/1 clock */
 
-  p4_outb(SCBRR, BPS_SETTING_VALUE);
+	p4_outb(SCBRR, BPS_SETTING_VALUE);
 
-  sleep128(1);			/* wait at least 1bit-time */
+	sleep128(1);		/* wait at least 1bit-time */
 
 #if defined(CONFIG_SCIF)
 #if defined(CONFIG_CPU_SH3)
-  { /* For SH7709, SH7709A, SH7729 */
-    unsigned short data;
-    /* We need to set SCPCR to enable RTS/CTS */
-    data = p4_inw(SCPCR);
-    /* Clear out SCP7MD1,0, SCP4MD1,0,
-       Set SCP6MD1,0 = {01} (output)  */
-    p4_outw(SCPCR, (data&0x0cff)|0x1000);
+	{			/* For SH7709, SH7709A, SH7729 */
+		unsigned short data;
+		/* We need to set SCPCR to enable RTS/CTS */
+		data = p4_inw(SCPCR);
+		/* Clear out SCP7MD1,0, SCP4MD1,0,
+		   Set SCP6MD1,0 = {01} (output)  */
+		p4_outw(SCPCR, (data & 0x0cff) | 0x1000);
 
-    data = p4_inb(SCPDR);
-    /* Set /RTS2 (bit6) = 0 */
-    p4_outb(SCPDR, data&0xbf);
-  }
+		data = p4_inb(SCPDR);
+		/* Set /RTS2 (bit6) = 0 */
+		p4_outb(SCPDR, data & 0xbf);
+	}
 #elif defined(CONFIG_CPU_SH4)
-  p4_outw(SCSPTR, 0x0080); /* Set RTS = 1 */
+	p4_outw(SCSPTR, 0x0080);	/* Set RTS = 1 */
 #endif
-  p4_out(SCFCR, 0x0000);	/* RTRG=00, TTRG=00 */
-  				/* MCE=0,TFRST=0,RFRST=0,LOOP=0 */
+	p4_out(SCFCR, 0x0000);	/* RTRG=00, TTRG=00 */
+	/* MCE=0,TFRST=0,RFRST=0,LOOP=0 */
 #endif
 
-  p4_out(SCSCR, SCSCR_INIT|SCSCR_CKE);
+	p4_out(SCSCR, SCSCR_INIT | SCSCR_CKE);
 }
 
-static inline int
-getDebugCharReady (void)
-{
-  unsigned short status;
+__initcall(init_serial);
 
-  status = p4_in(SC_SR);
-  if (status & ( SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
-    handleError ();
+static inline int getDebugCharReady(void)
+{
+	unsigned short status;
+
+	status = p4_in(SC_SR);
+	if (status & (SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
+		handleError();
 #if defined(CONFIG_SCIF) && defined(CONFIG_CPU_SH4)
-  if (p4_inw(SCLSR) & SCIF_ORER)
-    handleError ();
+	if (p4_inw(SCLSR) & SCIF_ORER)
+		handleError();
 #endif
 
-  return (status & SCI_RD_F);
+	return (status & SCI_RD_F);
 }
 
-static void
-delayX (void)
+static void delayX(void)
 {
-  /* XXX: Look RTC? */
-  int i;
+	/* XXX: Look RTC? */
+	int i;
 
-  for (i=0; i<256*10; i++)
-    asm volatile ("": : : "memory");
+	for (i = 0; i < 256 * 10; i++)
+		asm volatile ("":::"memory");
 }
 
-int
-getDebugCharTimeout (int count)
+int getDebugCharTimeout(int count)
 {
-  unsigned short status;
-  char ch;
+	unsigned short status;
+	char ch;
 
-  while (1)
-    {
-      if (getDebugCharReady())
-	break;
+	while (1) {
+		if (getDebugCharReady())
+			break;
 
-      delayX ();
-      if (--count == 0)
-	return -1;
-    }
+		delayX();
+		if (--count == 0)
+			return -1;
+	}
 
-  ch = p4_inb(SC_RDR);
-  status = p4_in(SC_SR);
-  p4_out(SC_SR, SCI_RDRF_CLEAR);
+	ch = p4_inb(SC_RDR);
+	status = p4_in(SC_SR);
+	p4_out(SC_SR, SCI_RDRF_CLEAR);
 
-  if (status & (SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
-    handleError ();
+	if (status & (SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
+		handleError();
 #if defined(CONFIG_SCIF) && defined(CONFIG_CPU_SH4)
-  if (p4_inw(SCLSR) & SCIF_ORER)
-    handleError ();
+	if (p4_inw(SCLSR) & SCIF_ORER)
+		handleError();
 #endif
 
-  return ch;
+	return ch;
 }
 
-char 
-getDebugChar (void)
+char getDebugChar(void)
 {
-  unsigned short status;
-  char ch;
+	unsigned short status;
+	char ch;
 
-  while ( ! getDebugCharReady())
-    ;
+	while (!getDebugCharReady()) ;
 
-  ch = p4_inb(SC_RDR);
-  status = p4_in(SC_SR);
-  p4_out(SC_SR, SCI_RDRF_CLEAR);
+	ch = p4_inb(SC_RDR);
+	status = p4_in(SC_SR);
+	p4_out(SC_SR, SCI_RDRF_CLEAR);
 
-  if (status & (SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
-    handleError ();
+	if (status & (SCI_PER | SCI_FER | SCI_ER | SCI_BRK))
+		handleError();
 #if defined(CONFIG_SCIF) && defined(CONFIG_CPU_SH4)
-  if (p4_inw(SCLSR) & SCIF_ORER)
-    handleError ();
+	if (p4_inw(SCLSR) & SCIF_ORER)
+		handleError();
 #endif
 
-  return ch;
+	return ch;
 }
 
-static inline int 
-putDebugCharReady (void)
+static inline int putDebugCharReady(void)
 {
-  unsigned short status;
+	unsigned short status;
 
-  status = p4_in(SC_SR);
-  return (status & SCI_TD_E);
+	status = p4_in(SC_SR);
+	return (status & SCI_TD_E);
 }
 
-void
-putDebugChar (char ch)
+void putDebugChar(char ch)
 {
-  while (!putDebugCharReady())
-    ;
+	unsigned short status;
+	
+	while (!putDebugCharReady()) 
+		;
 
-  p4_outb(SC_TDR, ch);
-  p4_in(SC_SR);
-  p4_out(SC_SR, SCI_TDRE_CLEAR);
+	p4_outb(SC_TDR, ch);
+	status = p4_in(SC_SR);
+	status &= ~SCI_TD_E;
+	p4_out(SC_SR, status);
 }
 
-void
-putString (char *str)
-{
-  char *p;
-
-  for (p = str; *p; p++)
-    {
-      if (*p == '\n')
-	putDebugChar ('\r');
-      putDebugChar (*p);
-    }
-}
-
-#else /*if (defined(CONFIG_SCI) || defined(CONFIG_SCIF))*/
+#else				/*if (defined(CONFIG_SCI) || defined(CONFIG_SCIF)) */
 /* without serial-console */
 
-void
-handleError (void)
+void handleError(void)
 {
 }
 
-void
-init_serial(void)
+void init_serial(void)
 {
 }
 
-int
-getDebugCharTimeout (int count)
+int getDebugCharTimeout(int count)
 {
 	return 0;
 }
 
-char 
-getDebugChar (void)
+char getDebugChar(void)
 {
 	return 0;
 }
 
-void
-putDebugChar (char ch)
+void putDebugChar(char ch)
 {
 }
 
-void
-putString (char *str)
-{
-}
-
-#endif /*if (defined(CONFIG_SCI) || defined(CONFIG_SCIF))*/
+#endif				/*if (defined(CONFIG_SCI) || defined(CONFIG_SCIF)) */

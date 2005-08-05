@@ -1,4 +1,0 @@
-#include "config/config.h-sesh3"
-
-#define CONFIG_IDE		1
-#define CONFIG_MRSHPC           1

@@ -112,6 +112,6 @@ INITIAL_SR:
 INITIAL_STACK:
 	.long	SYMBOL_NAME(stub_stack)
 VBR_INIT:
-	.long	SYMBOL_NAME(start)
+	.long	SYMBOL_NAME(vbr_base)
 
 /* End of entry.S */

@@ -51,7 +51,7 @@ int stub_stack[stub_stack_size]
 int *stub_sp;
 
 static const char *const banner = "\n"
-    "SH IPL+g version 0.12, Copyright (C) 2001 Free Software Foundation, Inc.\n"
+    "SH IPL+g version 0.13, Copyright (C) 2001 Free Software Foundation, Inc.\n"
     "\n"
     "This software comes with ABSOLUTELY NO WARRANTY; for details type `w'.\n"
     "This is free software, and you are welcome to redistribute it under\n"
